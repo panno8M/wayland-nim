@@ -1,0 +1,25 @@
+#ifdef C2NIM
+#  def wl_list_for_each(pos, head, member)				\
+	for (pos = wl_container_of((head)->next, pos, member);	\
+	     &pos->member != (head);					\
+	     pos = wl_container_of(pos->member.next, pos, member))
+
+#  def wl_list_for_each_safe(pos, tmp, head, member)			\
+	for (pos = wl_container_of((head)->next, pos, member),		\
+	     tmp = wl_container_of((pos)->member.next, tmp, member);	\
+	     &pos->member != (head);					\
+	     pos = tmp,							\
+	     tmp = wl_container_of(pos->member.next, tmp, member))
+
+#  def wl_array_for_each(pos, array)					\
+	for (pos = (array)->data;					\
+	     (array)->size != 0 &&					\
+	     (char *) pos < ((char *) (array)->data + (array)->size); \
+	     (pos)++)
+
+#  def WL_DEPRECATED
+#  def WL_PRINTF(x, y)
+#  def WL_TYPEOF(x) typeof(x)
+
+#discardableprefix wl_proxy_marshal_flags
+#endif

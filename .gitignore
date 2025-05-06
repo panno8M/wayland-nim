@@ -1,0 +1,4 @@
+bin/
+nimble.develop
+nimble.paths
+tmp
