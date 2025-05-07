@@ -5,12 +5,12 @@ type element = object
   i: int
   link: wl_list
 
-proc validate_list(list: ptr wl_list; reference: openArray[int]): bool =
+proc validate_list(list: var wl_list; reference: openArray[int]): bool =
   var e: ptr element
   var i: int
 
   i = 0
-  wl_list_for_each(e, list, link):
+  wl_list_for_each(e, addr list, link):
     if i >= reference.len:
       return false
     if e.i != reference[i]:
@@ -26,17 +26,17 @@ suite "list":
   test "list_init":
     var list: wl_list
 
-    wl_list_init(addr list)
+    init list
     check list.next == addr list
     check list.prev == addr list
-    check wl_list_empty(addr list)
+    check empty list
 
   test "list_insert":
     var list: wl_list
     var e: element
 
-    wl_list_init(addr list)
-    wl_list_insert(addr list, addr e.link)
+    init list
+    list.insert e.link
     check list.next == addr e.link
     check list.prev == addr e.link
     check e.link.next == addr list
@@ -46,12 +46,12 @@ suite "list":
     var list: wl_list
     var e: element
 
-    wl_list_init(addr list)
-    check wl_list_length(addr list) == 0
-    wl_list_insert(addr list, addr e.link)
-    check wl_list_length(addr list) == 1
-    wl_list_remove(addr e.link)
-    check wl_list_length(addr list) == 0
+    init list
+    check list.length == 0
+    list.insert e.link
+    check list.length == 1
+    remove e.link
+    check list.length == 0
 
   test "list_iterator":
     var list: wl_list
@@ -65,11 +65,11 @@ suite "list":
     e3.i = 5588
     e4.i = 12
 
-    wl_list_init(addr list)
-    wl_list_insert(list.prev, addr e1.link)
-    wl_list_insert(list.prev, addr e2.link)
-    wl_list_insert(list.prev, addr e3.link)
-    wl_list_insert(list.prev, addr e4.link)
+    init list
+    list.prev.insert e1.link
+    list.prev.insert e2.link
+    list.prev.insert e3.link
+    list.prev.insert e4.link
 
     i = 0
     wl_list_for_each(e, addr list, link):
@@ -97,14 +97,14 @@ suite "list":
     e2.i = 8888
     e3.i = 1000
 
-    wl_list_init(addr list)
-    wl_list_insert(addr list, addr e1.link)
-    wl_list_insert(list.prev, addr e2.link)
-    wl_list_insert(list.prev, addr e3.link)
-    check validate_list(addr list, reference1)
+    init list
+    list.insert e1.link
+    list.prev.insert e2.link
+    list.prev.insert e3.link
+    check validate_list(list, reference1)
 
-    wl_list_remove(addr e2.link)
-    check validate_list(addr list, reference2)
+    remove e2.link
+    check validate_list(list, reference2)
 
   test "list_insert_list":
     var list, other: wl_list
@@ -117,21 +117,21 @@ suite "list":
     e2.i = 8888
     e3.i = 1000
 
-    wl_list_init(addr list)
-    wl_list_insert(addr list, addr e1.link)
-    wl_list_insert(list.prev, addr e2.link)
-    wl_list_insert(list.prev, addr e3.link)
-    check validate_list(addr list, reference1)
+    init list
+    list.insert e1.link
+    list.prev.insert e2.link
+    list.prev.insert e3.link
+    check validate_list(list, reference1)
 
     e4.i = 76543
     e5.i = 1
     e6.i = -500
 
-    wl_list_init(addr other)
-    wl_list_insert(addr other, addr e4.link)
-    wl_list_insert(other.prev, addr e5.link)
-    wl_list_insert(other.prev, addr e6.link)
-    check validate_list(addr other, reference2)
+    init other
+    other.insert e4.link
+    other.prev.insert e5.link
+    other.prev.insert e6.link
+    check validate_list(other, reference2)
 
-    wl_list_insert_list(list.next, addr other)
-    check validate_list(addr list, reference3)
+    list.next.insert_list other
+    check validate_list(list, reference3)

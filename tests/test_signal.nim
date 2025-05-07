@@ -17,12 +17,12 @@ proc signal_notify_mutable*(listener: ptr wl_listener; data: pointer) =
 proc signal_notify_and_remove_mutable*(listener: ptr wl_listener; data: pointer) =
   let test_data = cast[ptr signal_emit_mutable_data](data)
   signal_notify_mutable(listener, test_data)
-  wl_list_remove(addr test_data.remove_listener.link)
+  remove test_data.remove_listener.link
 
 suite "signal":
   test "signal_init":
     var signal: wl_signal
-    wl_signal_init(addr signal)
+    init signal
     ##  Test if listeners' list is initialized
     check addr(signal.listener_list) == signal.listener_list.next # Maybe wl_signal implementation changed?
     check signal.listener_list.next == signal.listener_list.prev # Maybe wl_signal implementation changed?
@@ -35,31 +35,31 @@ suite "signal":
     var l3 = wl_listener(notify: cast[wl_notify_func_t](0x3))
     ##  one real, why not
     var l4 = wl_listener(notify: signal_notify)
-    wl_signal_init(addr signal)
-    wl_signal_add(addr signal, addr l1)
-    wl_signal_add(addr signal, addr l2)
-    wl_signal_add(addr signal, addr l3)
-    wl_signal_add(addr signal, addr l4)
-    check wl_signal_get(addr signal, signal_notify) == addr l4
-    check wl_signal_get(addr signal, cast[wl_notify_func_t](0x3)) == addr l3
-    check wl_signal_get(addr signal, cast[wl_notify_func_t](0x2)) == addr l2
-    check wl_signal_get(addr signal, cast[wl_notify_func_t](0x1)) == addr l1
+    init signal
+    signal.add l1
+    signal.add l2
+    signal.add l3
+    signal.add l4
+    check signal.get(signal_notify) == addr l4
+    check signal.get(cast[wl_notify_func_t](0x3)) == addr l3
+    check signal.get(cast[wl_notify_func_t](0x2)) == addr l2
+    check signal.get(cast[wl_notify_func_t](0x1)) == addr l1
     ##  get should not be destructive
-    check wl_signal_get(addr signal, signal_notify) == addr l4
-    check wl_signal_get(addr signal, cast[wl_notify_func_t](0x3)) == addr l3
-    check wl_signal_get(addr signal, cast[wl_notify_func_t](0x2)) == addr l2
-    check wl_signal_get(addr signal, cast[wl_notify_func_t](0x1)) == addr l1
+    check signal.get(signal_notify) == addr l4
+    check signal.get(cast[wl_notify_func_t](0x3)) == addr l3
+    check signal.get(cast[wl_notify_func_t](0x2)) == addr l2
+    check signal.get(cast[wl_notify_func_t](0x1)) == addr l1
 
   test "signal_emit_to_one_listener":
     var count: cint = 0
     var counter: cint
     var signal: wl_signal
     var l1 = wl_listener(notify: signal_notify)
-    wl_signal_init(addr signal)
-    wl_signal_add(addr signal, addr l1)
+    init signal
+    signal.add l1
     counter = 0
     while counter < 100:
-      wl_signal_emit(addr signal, addr count)
+      signal.emit count
       inc counter
     check counter == count
 
@@ -70,13 +70,13 @@ suite "signal":
     var l1 = wl_listener(notify: signal_notify)
     var l2 = wl_listener(notify: signal_notify)
     var l3 = wl_listener(notify: signal_notify)
-    wl_signal_init(addr signal)
-    wl_signal_add(addr signal, addr l1)
-    wl_signal_add(addr signal, addr l2)
-    wl_signal_add(addr signal, addr l3)
+    init signal
+    signal.add l1
+    signal.add l2
+    signal.add l3
     counter = 0
     while counter < 100:
-      wl_signal_emit(addr signal, addr count)
+      signal.emit count
       inc counter
     check 3 * counter == count
 
@@ -87,10 +87,10 @@ suite "signal":
     var l1 = wl_listener(notify: signal_notify_mutable)
     var l2 = wl_listener(notify: signal_notify_and_remove_mutable)
     var l3 = wl_listener(notify: signal_notify_mutable)
-    wl_signal_init(addr signal)
-    wl_signal_add(addr signal, addr l1)
-    wl_signal_add(addr signal, addr l2)
-    wl_signal_add(addr signal, addr l3)
+    init signal
+    signal.add l1
+    signal.add l2
+    signal.add l3
     data.remove_listener = addr l3
-    wl_signal_emit_mutable(addr signal, addr data)
+    signal.emit_mutable data
     check data.count == 2

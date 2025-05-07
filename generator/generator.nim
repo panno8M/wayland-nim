@@ -79,16 +79,16 @@ proc postprocess(contents: seq[string]): seq[string] =
 
 proc postprocess_server(contents: seq[string]): seq[string] =
   result = postprocess contents
-  var wl_signal_init_i: int
+  var include_signal_i: int
   for i, line in result:
-    if line =~ peg"proc\ wl_signal_init.*":
-      wl_signal_init_i = i
+    if line =~ peg"proc\ post_event\*.*":
+      include_signal_i = i
 
-  result.insert("include includes/signal", wl_signal_init_i)
-  result.removeBlock(peg"proc\ wl_signal_init\*.*")
-  result.removeBlock(peg"proc\ wl_signal_add\*.*")
-  result.removeBlock(peg"proc\ wl_signal_get\*.*")
-  result.removeBlock(peg"proc\ wl_signal_emit\*.*")
+  result.insert("include includes/signal", include_signal_i)
+  result.removeBlock(peg"proc\ init\*\(signal.*")
+  result.removeBlock(peg"proc\ add\*\(signal.*")
+  result.removeBlock(peg"proc\ get\*\(signal.*")
+  result.removeBlock(peg"proc\ emit\*\(signal.*")
 
 proc postprocess_cursor(contents: seq[string]): seq[string] =
   result = postprocess contents
@@ -155,6 +155,35 @@ proc c2nim(shell: ShellEnv; args: C2NimArgs; postprocess: proc(contents: seq[str
     r"--mangle:'wayland\-server=server_core'",
     r"--mangle:wayland\-util=util",
     r"--mangle:wayland\-version=version",
+    r"--mangle:wl_event_loop_create$=create_event_loop",
+    r"--mangle:wl_event_loop_=",
+    r"--mangle:wl_event_source_=",
+    r"--mangle:wl_display_create$=create_display",
+    r"--mangle:wl_display_connect{.*}=connect_display$1",
+    r"--mangle:wl_display_=",
+    r"--mangle:wl_global_create$=create_global",
+    r"--mangle:wl_global_=",
+    r"--mangle:wl_client_create$=create_client",
+    r"--mangle:wl_client_from_link$=client_from_link",
+    r"--mangle:wl_client_=",
+    r"--mangle:wl_signal_=",
+    r"--mangle:wl_resource_create$=create_resource",
+    r"--mangle:wl_resource_from_link$=resource_from_link",
+    r"--mangle:wl_resource_=",
+    r"--mangle:wl_shm_buffer_get$=get_shm_buffer",
+    r"--mangle:wl_shm_buffer_create$=create_shm_buffer",
+    r"--mangle:wl_shm_buffer_=",
+    r"--mangle:wl_shm_pool_=",
+    r"--mangle:wl_protocol_logger_!(type)!(message)=",
+    r"--mangle:wl_log_!(func_t)=",
+    r"--mangle:wl_event_queue_=",
+    r"--mangle:wl_proxy_!(create_wrapper)!(wrapper_destroy)=",
+    r"--mangle:wl_cursor_theme_load=load_cursor_theme",
+    r"--mangle:wl_cursor_theme_=",
+    r"--mangle:wl_cursor_image_=",
+    r"--mangle:wl_cursor_=",
+    r"--mangle:wl_egl_window_create=create_egl_window",
+    r"--mangle:wl_egl_window_=",
   ]
   result = shell.exec("c2nim", a)
   args.out.writeFile postprocess(args.out.readFile.splitLines).join("\n")

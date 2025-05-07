@@ -656,15 +656,15 @@ proc write_stubs(messages: seq[Message]; ifce: Interface) =
 
   echo ifce.function("set_user_data",
     [arg("user_data", "pointer")], "", ["inline"],
-    &"wl_proxy_set_user_data(cast[ptr wl_proxy]({ifce.name}), user_data)")
+    &"cast[ptr wl_proxy]({ifce.name}).set_user_data(user_data)")
 
   echo ifce.function("get_user_data",
     [], "pointer", ["inline"],
-    &"wl_proxy_get_user_data(cast[ptr wl_proxy]({ifce.name}))")
+    &"cast[ptr wl_proxy]({ifce.name}).get_user_data()")
 
   echo ifce.function("get_version",
     [], "uint32", ["inline"],
-    &"wl_proxy_get_version(cast[ptr wl_proxy]({ifce.name}))")
+    &"cast[ptr wl_proxy]({ifce.name}).get_version()")
 
   for m in messages:
     if m.destructor:
@@ -676,7 +676,7 @@ proc write_stubs(messages: seq[Message]; ifce: Interface) =
     quit(QuitFailure)
   if not has_destroy and ifce.name != "wl_display":
     echo ifce.function("destroy", [], "", ["inline"],
-      &"wl_proxy_destroy(cast[ptr wl_proxy]({ifce.name}))")
+      &"destroy cast[ptr wl_proxy]({ifce.name})")
 
   for m in messages:
     if m.new_id_count > 1:
@@ -703,7 +703,6 @@ proc write_stubs(messages: seq[Message]; ifce: Interface) =
         "".type
 
     var callargs: seq[string]
-    callargs.add &"cast[ptr wl_proxy]({ifce.name})"
     callargs.add &"{ifce.name}_request_{m.name}.ord"
     if ret == nil:
       callargs.add "nil"
@@ -716,7 +715,7 @@ proc write_stubs(messages: seq[Message]; ifce: Interface) =
     if ret != nil and ret.interface_name.len == 0:
       callargs.add "version"
     else:
-      callargs.add &"wl_proxy_get_version(cast[ptr wl_proxy]({ifce.name.identify}))"
+      callargs.add &"cast[ptr wl_proxy]({ifce.name.identify}).get_version()"
     callargs.add if m.destructor: "WL_MARSHAL_FLAG_DESTROY" else: "0"
     for a in m.args:
       if a.`type` == NEW_ID:
@@ -727,7 +726,7 @@ proc write_stubs(messages: seq[Message]; ifce: Interface) =
         callargs.add a.name.identify
     if ret != nil and ret.interface_name.len != 0:
       f.body.add &"cast[ptr {ret.interface_name.identify}]("
-    f.body.add "wl_proxy_marshal_flags".call(callargs)
+    f.body.add fmt"cast[ptr wl_proxy]({ifce.name}).marshal_flags".call(callargs)
     if ret != nil and ret.interface_name.len != 0:
       f.body.add ")"
     echo f
@@ -757,7 +756,7 @@ proc write_event_wrappers(messages: seq[Message]; ifce: Interface; integration: 
   * *{a.name}*: {a.summary}"""
     case integration
     of exportc:
-      f.body = "wl_resource_post_event".call(@["resource", &"{ifce.name}_event_{m.name}.ord"] & m.args.mapIt(it.name.identify))
+      f.body = "resource.post_event".call(@[&"{ifce.name}_event_{m.name}.ord"] & m.args.mapIt(it.name.identify))
     else:
       discard
     echo f, "\n"
@@ -842,7 +841,7 @@ type {ifce.name.listener(side)}* = object"""
     echo ifce.function("add_listener",
       [arg("listener", ifce.name.listener(side).ptr), arg("data", "pointer")], "int",
       ["inline"],
-      "wl_proxy_add_listener".call(&"cast[ptr wl_proxy]({ifce.name})", "listener", "data"))
+      &"cast[ptr wl_proxy]({ifce.name}).add_listener(listener, data)")
   echo ""
 
 proc get_import_name(core: bool; side: Side): string =

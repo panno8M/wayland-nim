@@ -41,8 +41,8 @@ type
     ## Waiting For Resume
     resource*: ptr wl_resource
 
-proc client_connect*(): ptr Client
-proc client_disconnect*(c: ptr Client)
+proc connect_client*(): ptr Client
+proc disconnect*(c: ptr Client)
 proc stop_display*(c: ptr Client; num: cint): cint
 proc noop_request*(c: ptr Client)
 
@@ -61,19 +61,19 @@ proc noop_request*(c: ptr Client)
 ## display_destroy(d)
 ## ```
 
-proc display_create*(): ptr Display
-proc display_destroy*(d: ptr Display)
-proc display_destroy_expect_signal*(d: ptr Display; signum: cint)
-proc display_run*(d: ptr Display)
+proc create_display*(): ptr Display
+proc destroy*(d: ptr Display)
+proc destroy_expect_signal*(d: ptr Display; signum: cint)
+proc run*(d: ptr Display)
 
-proc display_post_resume_events*(d: ptr Display)
+proc post_resume_events*(d: ptr Display)
   ##  This function posts the display_resumed event to all waiting clients,
   ##  so that after flushing events the clients will stop waiting and continue.
   ##
   ##  (Calling `display_run` after this function will resume the display loop.)
   ##
 
-proc display_resume*(d: ptr Display)
+proc resume*(d: ptr Display)
   ##  After n clients called stop_display(..., n), the display
   ##  is stopped and can process the code after display_run().
   ##
@@ -85,21 +85,21 @@ var client_log*: File
   ##  The file descriptor containing the client log. This is only valid in the
   ##  test client processes.
 
-proc client_create_with_name*(d: ptr Display; client_main: proc (data: pointer) {.nimcall.};
+proc create_client_with_name*(d: ptr Display; client_main: proc (data: pointer) {.nimcall.};
                              data: pointer; name: cstring): ptr ClientInfo
-template client_create*(d, c, data: untyped): untyped =
-  client_create_with_name((d), (c), data, (astToStr(c)))
+template create_client*(d, c, data: untyped): untyped =
+  create_client_with_name((d), (c), data, (astToStr(c)))
 
 proc noarg_cb*(data: pointer) =
   let cb = cast[proc() {.nimcall.}](data)
   cb()
 
-proc client_create_with_name_noarg*(d: ptr Display; client_main: proc () {.nimcall.}; name: cstring): ptr Client_info {.
+proc create_client_with_name_noarg*(d: ptr Display; client_main: proc () {.nimcall.}; name: cstring): ptr Client_info {.
     inline.} =
-  return client_create_with_name(d, noarg_cb, client_main, name)
+  return create_client_with_name(d, noarg_cb, client_main, name)
 
-template client_create_noarg*(d, c: untyped): untyped =
-  client_create_with_name_noarg((d), (c), (astToStr(c)))
+template create_client_noarg*(d, c: untyped): untyped =
+  create_client_with_name_noarg((d), (c), (astToStr(c)))
 
 # --- Protocol ---
 
@@ -150,7 +150,7 @@ proc handle_client_destroy*(data: pointer) =
     ci.exit_code = WEXITSTATUS(status)
   inc d.clients_terminated_no
   if d.clients.len == d.clients_terminated_no:
-    wl_display_terminate(d.wl_display)
+    terminate d.wl_display
   # the clients are not removed from the list, because
   # at the end of the test we check the exit codes of all
   # clients. In the case that the test would go through
@@ -165,8 +165,8 @@ proc client_destroyed*(listener: ptr wl_listener; data: pointer) =
   ##  client destruction (fd close etc.
   ci = wl_container_of(listener, ci, destroy_listener)
   let d = ci.display
-  let loop = wl_display_get_event_loop(d.wl_display)
-  discard wl_event_loop_add_idle(loop, handle_client_destroy, ci)
+  let loop = d.wl_display.get_event_loop
+  discard loop.add_idle(handle_client_destroy, ci)
   ci.wl_client = nil
 
 proc client_log_handler*(fmt {.exportc.}: cstring; arg {.exportc.}: va_list) =
@@ -192,7 +192,7 @@ proc run_client*(client_main: proc (data: pointer) {.nimcall.}; data: pointer; w
     putEnv("WAYLAND_SOCKET", $wayland_sock)
   ##  Capture the log to the specified file descriptor.
   client_log = log
-  wl_log_set_handler_client(client_log_handler)
+  set_handler_client client_log_handler
   # var cur_fds = count_open_fds()
   client_main(data)
   ##  Clients using wl_display_connect() will end up closing the socket
@@ -207,7 +207,7 @@ proc run_client*(client_main: proc (data: pointer) {.nimcall.}; data: pointer; w
 proc create_log*(): File =
   result = createTempFile("wayland-tests-log", "").cfile
 
-proc display_create_client*(d: ptr Display; client_main: proc (data: pointer) {.nimcall.};
+proc create_client*(d: ptr Display; client_main: proc (data: pointer) {.nimcall.};
                            data: pointer; name: cstring): ptr ClientInfo =
   var pipe_cli: array[2, cint]
   var sock_wayl: array[2, cint]
@@ -239,34 +239,34 @@ proc display_create_client*(d: ptr Display; client_main: proc (data: pointer) {.
   result.pipe = pipe_cli[1]
   result.log = log
   result.destroy_listener.notify = client_destroyed
-  result.wl_client = wl_client_create(d.wl_display, sock_wayl[1])
+  result.wl_client = d.wl_display.create_client(sock_wayl[1])
   if result.wl_client == nil:
     ##  abort the client
     let ret = write(result.pipe, addr can_continue, sizeof int)
     assert ret == sizeof(int) # aborting the client failed
     assert false # Couldnt create wayland client
-  wl_client_add_destroy_listener(result.wl_client, addr result.destroy_listener)
+  result.wl_client.add_destroy_listener addr result.destroy_listener
 
-proc client_create_with_name*(d: ptr Display; client_main: proc (data: pointer) {.nimcall.};
+proc create_client_with_name*(d: ptr Display; client_main: proc (data: pointer) {.nimcall.};
                              data: pointer; name: cstring): ptr ClientInfo =
   var can_continue: cint = 1
-  result = display_create_client(d, client_main, data, name)
+  result = d.create_client(client_main, data, name)
   ##  let the show begin!
   assert write(result.pipe, addr can_continue, sizeof int) == sizeof int
 
 proc handle_stop_display*(client: ptr wl_client; resource: ptr wl_resource;
                          num: uint32) =
-  var d = cast[ptr Display](wl_resource_get_user_data(resource))
+  var d = cast[ptr Display](resource.get_user_data)
   var wfr: ptr Wfr
   assert d.waiting_for_resume.len < int num # test error: Too many clients sent stop_display request
   wfr = cast[ptr Wfr](alloc sizeof Wfr)
   if wfr == nil:
-    wl_client_post_no_memory(client)
+    client.post_no_memory
     assert false # Out of memory
   wfr.resource = resource
   d.waiting_for_resume.add wfr
   if d.waiting_for_resume.len == int num:
-    wl_display_terminate(d.wl_display)
+    terminate d.wl_display
 
 proc handle_noop*(client: ptr wl_client; resource: ptr wl_resource) =
   discard
@@ -275,48 +275,47 @@ let tc_implementation* = TestCompositorInterface(
     stop_display: handle_stop_display, noop: handle_noop)
 
 proc tc_bind*(client: ptr wl_client; data: pointer; ver: uint32; id: uint32) =
-  let res = wl_resource_create(client, addr test_compositor_interface, cint ver, id)
+  let res = client.create_resource(addr test_compositor_interface, cint ver, id)
   if res == nil:
-    wl_client_post_no_memory(client)
+    client.post_no_memory
     assert false # Out of memory
-  wl_resource_set_implementation(res, addr tc_implementation, data, nil)
+  res.set_implementation(addr tc_implementation, data, nil)
 
-proc display_create*(): ptr Display =
+proc create_display*(): ptr Display =
   var stat: cint = 0
   result = cast[ptr Display](alloc sizeof Display)
   zeroMem result, sizeof Display
   assert result != nil # Out of memory
-  result.wl_display = wl_display_create()
+  result.wl_display = server.create_display()
   assert result.wl_display != nil # Creating display failed
   ##  hope the path won't be longer than 108 ...
   var socket_name = get_socket_name()
-  stat = wl_display_add_socket(result.wl_display, cstring socket_name)
+  stat = result.wl_display.add_socket cstring socket_name
   assert stat == 0 # Failed adding socket
   result.clients_terminated_no = 0
-  result.test_global = wl_global_create(result.wl_display, addr test_compositor_interface, 1,
-                                 result, tc_bind)
+  result.test_global = result.wl_display.create_global(addr test_compositor_interface, 1, result, tc_bind)
   assert result.test_global != nil # Creating test global failed
 
-proc display_run*(d: ptr Display) =
+proc run*(d: ptr Display) =
   assert d.waiting_for_resume.len == 0 # test error: Have waiting clients. Use display_resume.
-  wl_display_run(d.wl_display)
+  run d.wl_display
 
-proc display_post_resume_events*(d: ptr Display) =
+proc post_resume_events*(d: ptr Display) =
   assert d.waiting_for_resume.len > 0 # test error: No clients waiting.
   for i in countdown(d.waiting_for_resume.high, 0):
     let wfr = d.waiting_for_resume[i]
-    wl_resource_post_event(wfr.resource, DISPLAY_RESUMED)
+    wfr.resource.post_event(DISPLAY_RESUMED)
     d.waiting_for_resume.del i
     dealloc wfr
 
   assert d.waiting_for_resume.len == 0
 
-proc display_resume*(d: ptr Display) =
-  display_post_resume_events(d)
-  wl_display_run(d.wl_display)
+proc resume*(d: ptr Display) =
+  d.post_resume_events
+  run d.wl_display
 
 
-proc display_destroy_expect_signal*(d: ptr Display; signum: cint) =
+proc destroy_expect_signal*(d: ptr Display; signum: cint) =
   ## If signum is 0, expect a successful client exit, otherwise
   ## expect the client to have been killed by that signal.
   var failed: cint = 0
@@ -335,14 +334,14 @@ proc display_destroy_expect_signal*(d: ptr Display; signum: cint) =
     close cl.log
     dealloc cl
 
-  wl_global_destroy(d.test_global)
-  wl_display_destroy(d.wl_display)
+  destroy d.test_global
+  destroy d.wl_display
   dealloc d
   if failed != 0:
     quit &"{failed} child(ren) failed"
 
-proc display_destroy*(d: ptr Display) =
-  display_destroy_expect_signal(d, 0)
+proc destroy*(d: ptr Display) =
+  d.destroy_expect_signal(0)
 
 # --- Client helper functions ---
 
@@ -360,25 +359,25 @@ proc registry_handle_globals*(data: pointer; registry: ptr wl_registry; id: uint
     return
   c.tc = cast[ptr TestCompositor](registry.bind(id, addr test_compositor_interface, ver))
   assert c.tc != nil # Failed binding to registry
-  discard wl_proxy_add_listener(cast[ptr wl_proxy](c.tc), cast[pointer](addr(tc_listener)), c)
+  discard cast[ptr wl_proxy](c.tc).add_listener(cast[pointer](addr(tc_listener)), c)
 
 let registry_listener* = WlRegistryListener(
   global: registry_handle_globals,
   global_remove: nil)
 
-proc client_connect*(): ptr Client =
+proc connect_client*(): ptr Client =
   var reg: ptr wl_registry
   result = cast[ptr Client](alloc sizeof Client)
   zeroMem result, sizeof Client
   assert result != nil # Out of memory
-  result.wl_display = wl_display_connect(nil)
+  result.wl_display = nil.connect_display
   assert result.wl_display != nil # Failed connecting to display
   ##  create test_compositor proxy. Do it with temporary
   ##  registry so that client can define it's own listener later
   reg = result.wl_display.getRegistry
   assert reg != nil
   discard reg.addListener(addr registry_listener, result)
-  discard wl_display_roundtrip(result.wl_display)
+  discard roundtrip result.wl_display
   assert result.tc != nil
   destroy reg
 
@@ -388,28 +387,28 @@ proc check_error*(display: ptr wl_display) =
     id: uint32
   var intf: ptr wl_interface
   var err: cint
-  err = wl_display_get_error(display)
+  err = display.get_error
   ##  write out message about protocol error
   if err == EPROTO:
-    ec = wl_display_get_protocol_error(display, addr intf, addr id)
+    ec = display.get_protocol_error(addr intf, addr id)
     stderr.writeLine &"Client: Got protocol error {ec} on interface {intf.name} (object {id})"
   if err != 0:
     quit &"Client error: {strerror(err)}"
 
-proc client_disconnect*(c: ptr Client) =
+proc disconnect*(c: ptr Client) =
   ##  check for errors
   check_error(c.wl_display)
-  wl_proxy_destroy(cast[ptr wl_proxy](c.tc))
-  wl_display_disconnect(c.wl_display)
+  destroy(cast[ptr wl_proxy](c.tc))
+  disconnect(c.wl_display)
   dealloc c
 
 proc stop_display*(c: ptr Client; num: cint): cint =
   ## num is number of clients that requests to stop display.
   ## Display is stopped after it receives num STOP_DISPLAY requests
   c.display_stopped.store true
-  wl_proxy_marshal(cast[ptr wl_proxy](c.tc), STOP_DISPLAY, num)
+  cast[ptr wl_proxy](c.tc).marshal(STOP_DISPLAY, num)
   while c.display_stopped.load and result >= 0:
-    result = wl_display_dispatch(c.wl_display)
+    result = dispatch c.wl_display
 
 proc noop_request*(c: ptr Client) =
-  wl_proxy_marshal(cast[ptr wl_proxy](c.tc), TEST_NOOP)
+  cast[ptr wl_proxy](c.tc).marshal(TEST_NOOP)

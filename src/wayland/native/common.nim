@@ -88,14 +88,24 @@ type
 
 {.push, dynlib: "libwayland-client.so".}
 
-proc wl_list_init*(list: ptr wl_list) {.importc: "wl_list_init".}
-proc wl_list_insert*(list: ptr wl_list; elm: ptr wl_list) {.
-    importc: "wl_list_insert".}
-proc wl_list_remove*(elm: ptr wl_list) {.importc: "wl_list_remove".}
-proc wl_list_length*(list: ptr wl_list): cint {.importc: "wl_list_length".}
-proc wl_list_empty*(list: ptr wl_list): bool {.importc: "wl_list_empty".}
-proc wl_list_insert_list*(list: ptr wl_list; other: ptr wl_list) {.
-    importc: "wl_list_insert_list".}
+func init*(list: ptr wl_list) {.importc: "wl_list_init".}
+func insert*(list: ptr wl_list; elm: ptr wl_list | var wl_list) {.importc: "wl_list_insert".}
+func remove*(elm: ptr wl_list) {.importc: "wl_list_remove".}
+func length*(list: ptr wl_list): cint {.importc: "wl_list_length".}
+func empty*(list: ptr wl_list): bool {.importc: "wl_list_empty".}
+func insert_list*(list: ptr wl_list; other: ptr wl_list) {.importc: "wl_list_insert_list".}
+
+func init*(list: var wl_list) = init(addr(list))
+func insert*(list: var wl_list; elm: var wl_list) = insert(addr(list), addr(elm))
+func insert*(list: ptr wl_list; elm: var wl_list) = insert(list, addr(elm))
+func insert*(list: var wl_list; elm: ptr wl_list) = insert(addr(list), elm)
+func remove*(elm: var wl_list) = remove(addr(elm))
+func length*(list: var wl_list): cint = length(addr(list))
+func empty*(list: var wl_list): bool = empty(addr(list))
+func insert_list*(list: var wl_list; other: var wl_list) = insert_list(addr(list), addr(other))
+func insert_list*(list: ptr wl_list; other: var wl_list) = insert_list(list, addr(other))
+func insert_list*(list: var wl_list; other: ptr wl_list) = insert_list(addr(list), other)
+
 template wl_container_of*(`ptr`, sample, member: untyped): untyped =
   cast[typeof sample](cast[int](`ptr`) - offsetof(typeof(sample[]), member))
 
@@ -119,10 +129,22 @@ template wl_list_for_each_reverse*(pos, head, member; body): untyped =
     body
     pos = wl_container_of(pos.member.prev, pos, member)
 
-proc wl_array_init*(array: ptr wl_array) {.importc: "wl_array_init".}
-proc wl_array_release*(array: ptr wl_array) {.importc: "wl_array_release".}
-proc wl_array_add*(array: ptr wl_array; size: csize_t): pointer {.importc: "wl_array_add".}
-proc wl_array_copy*(array: ptr wl_array; source: ptr wl_array): cint {.importc: "wl_array_copy".}
+func init*(array: ptr wl_array) {.importc: "wl_array_init".}
+func release*(array: ptr wl_array) {.importc: "wl_array_release".}
+func add*(array: ptr wl_array; size: csize_t): pointer {.importc: "wl_array_add".}
+func copy*(array: ptr wl_array; source: ptr wl_array): cint {.importc: "wl_array_copy".}
+
+func init*(array: var wl_array) = init(addr(array))
+func release*(array: var wl_array) = release(addr(array))
+func add*(array: var wl_array; size: csize_t): pointer = add(addr(array), size)
+func copy*(array: var wl_array; source: var wl_array): cint = copy(addr(array), addr(source))
+func copy*(array: ptr wl_array; source: var wl_array): cint = copy(array, addr(source))
+func copy*(array: var wl_array; source: ptr wl_array): cint = copy(addr(array), source)
+
+func add*[T](array: ptr wl_array; _: typedesc[T]): ptr T =
+  cast[ptr T](array.add csize_t sizeof T)
+func add*[T](array: var wl_array; _: typedesc[T]): ptr T =
+  cast[ptr T](array.add csize_t sizeof T)
 
 template wl_array_for_each*(pos, array; body) =
   pos = cast[typeof pos](array.data)
@@ -130,10 +152,12 @@ template wl_array_for_each*(pos, array; body) =
     body
     pos = cast[typeof pos](cast[uint](pos) + uint sizeof pos[])
 
-proc wl_fixed_to_double*(f: wl_fixed_t): cdouble {.inline,
-    importc: "wl_fixed_to_double".}
-proc wl_fixed_from_double*(d: cdouble): wl_fixed_t {.inline,
+func to_double*(f: wl_fixed_t): cdouble {.inline, importc: "wl_fixed_to_double".}
+func wl_fixed_from_double*(d: cdouble): wl_fixed_t {.inline,
     importc: "wl_fixed_from_double".}
-proc wl_fixed_to_int*(f: wl_fixed_t): cint {.inline, importc: "wl_fixed_to_int".}
-proc wl_fixed_from_int*(i: cint): wl_fixed_t {.inline,
+func to_int*(f: wl_fixed_t): cint {.inline, importc: "wl_fixed_to_int".}
+func wl_fixed_from_int*(i: cint): wl_fixed_t {.inline,
     importc: "wl_fixed_from_int".}
+
+func to_fixed*(d: cdouble): wl_fixed_t {.inline.} = wl_fixed_from_double d
+func to_fixed*(i: cint): wl_fixed_t {.inline.} = wl_fixed_from_int i

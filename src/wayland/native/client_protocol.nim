@@ -76,14 +76,14 @@ type WlDisplayListener* = object
     id: uint32;
   ) {.nimcall.}
 proc add_listener*(wl_display: ptr wl_display; listener: ptr WlDisplayListener; data: pointer): int {.inline.} =
-  wl_proxy_add_listener(cast[ptr wl_proxy](wl_display), listener, data)
+  cast[ptr wl_proxy](wl_display).add_listener(listener, data)
 
 proc set_user_data*(wl_display: ptr wl_display; user_data: pointer) {.inline.} =
-  wl_proxy_set_user_data(cast[ptr wl_proxy](wl_display), user_data)
+  cast[ptr wl_proxy](wl_display).set_user_data(user_data)
 proc get_user_data*(wl_display: ptr wl_display): pointer {.inline.} =
-  wl_proxy_get_user_data(cast[ptr wl_proxy](wl_display))
+  cast[ptr wl_proxy](wl_display).get_user_data()
 proc get_version*(wl_display: ptr wl_display): uint32 {.inline.} =
-  wl_proxy_get_version(cast[ptr wl_proxy](wl_display))
+  cast[ptr wl_proxy](wl_display).get_version()
 proc sync*(wl_display: ptr wl_display): ptr wl_callback {.inline.} =
   ## asynchronous roundtrip
   ## 
@@ -99,7 +99,7 @@ proc sync*(wl_display: ptr wl_display): ptr wl_callback {.inline.} =
   ## 
   ## 	The callback_data passed in the callback is undefined and should be ignored.
   ## 
-  cast[ptr wl_callback](wl_proxy_marshal_flags(cast[ptr wl_proxy](wl_display), wl_display_request_sync.ord, addr wl_callback_interface, wl_proxy_get_version(cast[ptr wl_proxy](wl_display)), 0, nil))
+  cast[ptr wl_callback](cast[ptr wl_proxy](wl_display).marshal_flags(wl_display_request_sync.ord, addr wl_callback_interface, cast[ptr wl_proxy](wl_display).get_version(), 0, nil))
 proc get_registry*(wl_display: ptr wl_display): ptr wl_registry {.inline.} =
   ## get global registry object
   ## 
@@ -113,7 +113,7 @@ proc get_registry*(wl_display: ptr wl_display): ptr wl_registry {.inline.} =
   ## 	Therefore, clients should invoke get_registry as infrequently as
   ## 	possible to avoid wasting memory.
   ## 
-  cast[ptr wl_registry](wl_proxy_marshal_flags(cast[ptr wl_proxy](wl_display), wl_display_request_get_registry.ord, addr wl_registry_interface, wl_proxy_get_version(cast[ptr wl_proxy](wl_display)), 0, nil))
+  cast[ptr wl_registry](cast[ptr wl_proxy](wl_display).marshal_flags(wl_display_request_get_registry.ord, addr wl_registry_interface, cast[ptr wl_proxy](wl_display).get_version(), 0, nil))
 type WlRegistryListener* = object
   global*: proc(
     data: pointer;
@@ -128,23 +128,23 @@ type WlRegistryListener* = object
     name: uint32;
   ) {.nimcall.}
 proc add_listener*(wl_registry: ptr wl_registry; listener: ptr WlRegistryListener; data: pointer): int {.inline.} =
-  wl_proxy_add_listener(cast[ptr wl_proxy](wl_registry), listener, data)
+  cast[ptr wl_proxy](wl_registry).add_listener(listener, data)
 
 proc set_user_data*(wl_registry: ptr wl_registry; user_data: pointer) {.inline.} =
-  wl_proxy_set_user_data(cast[ptr wl_proxy](wl_registry), user_data)
+  cast[ptr wl_proxy](wl_registry).set_user_data(user_data)
 proc get_user_data*(wl_registry: ptr wl_registry): pointer {.inline.} =
-  wl_proxy_get_user_data(cast[ptr wl_proxy](wl_registry))
+  cast[ptr wl_proxy](wl_registry).get_user_data()
 proc get_version*(wl_registry: ptr wl_registry): uint32 {.inline.} =
-  wl_proxy_get_version(cast[ptr wl_proxy](wl_registry))
+  cast[ptr wl_proxy](wl_registry).get_version()
 proc destroy*(wl_registry: ptr wl_registry) {.inline.} =
-  wl_proxy_destroy(cast[ptr wl_proxy](wl_registry))
+  destroy cast[ptr wl_proxy](wl_registry)
 proc `bind`*(wl_registry: ptr wl_registry; name: uint32; `interface`: ptr wl_interface; version: uint32): pointer {.inline.} =
   ## bind an object to the display
   ## 
   ## Binds a new, client-created object to the server using the
   ## 	specified name as the identifier.
   ## 
-  wl_proxy_marshal_flags(cast[ptr wl_proxy](wl_registry), wl_registry_request_bind.ord, `interface`, version, 0, name, `interface`.name, version, nil)
+  cast[ptr wl_proxy](wl_registry).marshal_flags(wl_registry_request_bind.ord, `interface`, version, 0, name, `interface`.name, version, nil)
 type WlCallbackListener* = object
   done*: proc(
     data: pointer;
@@ -152,42 +152,42 @@ type WlCallbackListener* = object
     callback_data: uint32;
   ) {.nimcall.}
 proc add_listener*(wl_callback: ptr wl_callback; listener: ptr WlCallbackListener; data: pointer): int {.inline.} =
-  wl_proxy_add_listener(cast[ptr wl_proxy](wl_callback), listener, data)
+  cast[ptr wl_proxy](wl_callback).add_listener(listener, data)
 
 proc set_user_data*(wl_callback: ptr wl_callback; user_data: pointer) {.inline.} =
-  wl_proxy_set_user_data(cast[ptr wl_proxy](wl_callback), user_data)
+  cast[ptr wl_proxy](wl_callback).set_user_data(user_data)
 proc get_user_data*(wl_callback: ptr wl_callback): pointer {.inline.} =
-  wl_proxy_get_user_data(cast[ptr wl_proxy](wl_callback))
+  cast[ptr wl_proxy](wl_callback).get_user_data()
 proc get_version*(wl_callback: ptr wl_callback): uint32 {.inline.} =
-  wl_proxy_get_version(cast[ptr wl_proxy](wl_callback))
+  cast[ptr wl_proxy](wl_callback).get_version()
 proc destroy*(wl_callback: ptr wl_callback) {.inline.} =
-  wl_proxy_destroy(cast[ptr wl_proxy](wl_callback))
+  destroy cast[ptr wl_proxy](wl_callback)
 proc set_user_data*(wl_compositor: ptr wl_compositor; user_data: pointer) {.inline.} =
-  wl_proxy_set_user_data(cast[ptr wl_proxy](wl_compositor), user_data)
+  cast[ptr wl_proxy](wl_compositor).set_user_data(user_data)
 proc get_user_data*(wl_compositor: ptr wl_compositor): pointer {.inline.} =
-  wl_proxy_get_user_data(cast[ptr wl_proxy](wl_compositor))
+  cast[ptr wl_proxy](wl_compositor).get_user_data()
 proc get_version*(wl_compositor: ptr wl_compositor): uint32 {.inline.} =
-  wl_proxy_get_version(cast[ptr wl_proxy](wl_compositor))
+  cast[ptr wl_proxy](wl_compositor).get_version()
 proc destroy*(wl_compositor: ptr wl_compositor) {.inline.} =
-  wl_proxy_destroy(cast[ptr wl_proxy](wl_compositor))
+  destroy cast[ptr wl_proxy](wl_compositor)
 proc create_surface*(wl_compositor: ptr wl_compositor): ptr wl_surface {.inline.} =
   ## create new surface
   ## 
   ## Ask the compositor to create a new surface.
   ## 
-  cast[ptr wl_surface](wl_proxy_marshal_flags(cast[ptr wl_proxy](wl_compositor), wl_compositor_request_create_surface.ord, addr wl_surface_interface, wl_proxy_get_version(cast[ptr wl_proxy](wl_compositor)), 0, nil))
+  cast[ptr wl_surface](cast[ptr wl_proxy](wl_compositor).marshal_flags(wl_compositor_request_create_surface.ord, addr wl_surface_interface, cast[ptr wl_proxy](wl_compositor).get_version(), 0, nil))
 proc create_region*(wl_compositor: ptr wl_compositor): ptr wl_region {.inline.} =
   ## create new region
   ## 
   ## Ask the compositor to create a new region.
   ## 
-  cast[ptr wl_region](wl_proxy_marshal_flags(cast[ptr wl_proxy](wl_compositor), wl_compositor_request_create_region.ord, addr wl_region_interface, wl_proxy_get_version(cast[ptr wl_proxy](wl_compositor)), 0, nil))
+  cast[ptr wl_region](cast[ptr wl_proxy](wl_compositor).marshal_flags(wl_compositor_request_create_region.ord, addr wl_region_interface, cast[ptr wl_proxy](wl_compositor).get_version(), 0, nil))
 proc set_user_data*(wl_shm_pool: ptr wl_shm_pool; user_data: pointer) {.inline.} =
-  wl_proxy_set_user_data(cast[ptr wl_proxy](wl_shm_pool), user_data)
+  cast[ptr wl_proxy](wl_shm_pool).set_user_data(user_data)
 proc get_user_data*(wl_shm_pool: ptr wl_shm_pool): pointer {.inline.} =
-  wl_proxy_get_user_data(cast[ptr wl_proxy](wl_shm_pool))
+  cast[ptr wl_proxy](wl_shm_pool).get_user_data()
 proc get_version*(wl_shm_pool: ptr wl_shm_pool): uint32 {.inline.} =
-  wl_proxy_get_version(cast[ptr wl_proxy](wl_shm_pool))
+  cast[ptr wl_proxy](wl_shm_pool).get_version()
 proc create_buffer*(wl_shm_pool: ptr wl_shm_pool; offset: int32; width: int32; height: int32; stride: int32; format: uint32): ptr wl_buffer {.inline.} =
   ## create a buffer from the pool
   ## 
@@ -203,7 +203,7 @@ proc create_buffer*(wl_shm_pool: ptr wl_shm_pool; offset: int32; width: int32; h
   ## 	so it is valid to destroy the pool immediately after creating
   ## 	a buffer from it.
   ## 
-  cast[ptr wl_buffer](wl_proxy_marshal_flags(cast[ptr wl_proxy](wl_shm_pool), wl_shm_pool_request_create_buffer.ord, addr wl_buffer_interface, wl_proxy_get_version(cast[ptr wl_proxy](wl_shm_pool)), 0, nil, offset, width, height, stride, format))
+  cast[ptr wl_buffer](cast[ptr wl_proxy](wl_shm_pool).marshal_flags(wl_shm_pool_request_create_buffer.ord, addr wl_buffer_interface, cast[ptr wl_proxy](wl_shm_pool).get_version(), 0, nil, offset, width, height, stride, format))
 proc destroy*(wl_shm_pool: ptr wl_shm_pool) {.inline.} =
   ## destroy the pool
   ## 
@@ -213,7 +213,7 @@ proc destroy*(wl_shm_pool: ptr wl_shm_pool) {.inline.} =
   ## 	buffers that have been created from this pool
   ## 	are gone.
   ## 
-  wl_proxy_marshal_flags(cast[ptr wl_proxy](wl_shm_pool), wl_shm_pool_request_destroy.ord, nil, wl_proxy_get_version(cast[ptr wl_proxy](wl_shm_pool)), WL_MARSHAL_FLAG_DESTROY)
+  cast[ptr wl_proxy](wl_shm_pool).marshal_flags(wl_shm_pool_request_destroy.ord, nil, cast[ptr wl_proxy](wl_shm_pool).get_version(), WL_MARSHAL_FLAG_DESTROY)
 proc resize*(wl_shm_pool: ptr wl_shm_pool; size: int32) {.inline.} =
   ## change the size of the pool mapping
   ## 
@@ -228,7 +228,7 @@ proc resize*(wl_shm_pool: ptr wl_shm_pool; size: int32) {.inline.} =
   ## 	responsibility to ensure that the file is at least as big as
   ## 	the new pool size.
   ## 
-  wl_proxy_marshal_flags(cast[ptr wl_proxy](wl_shm_pool), wl_shm_pool_request_resize.ord, nil, wl_proxy_get_version(cast[ptr wl_proxy](wl_shm_pool)), 0, size)
+  cast[ptr wl_proxy](wl_shm_pool).marshal_flags(wl_shm_pool_request_resize.ord, nil, cast[ptr wl_proxy](wl_shm_pool).get_version(), 0, size)
 type WlShmListener* = object
   format*: proc(
     data: pointer;
@@ -236,16 +236,16 @@ type WlShmListener* = object
     format: uint32;
   ) {.nimcall.}
 proc add_listener*(wl_shm: ptr wl_shm; listener: ptr WlShmListener; data: pointer): int {.inline.} =
-  wl_proxy_add_listener(cast[ptr wl_proxy](wl_shm), listener, data)
+  cast[ptr wl_proxy](wl_shm).add_listener(listener, data)
 
 proc set_user_data*(wl_shm: ptr wl_shm; user_data: pointer) {.inline.} =
-  wl_proxy_set_user_data(cast[ptr wl_proxy](wl_shm), user_data)
+  cast[ptr wl_proxy](wl_shm).set_user_data(user_data)
 proc get_user_data*(wl_shm: ptr wl_shm): pointer {.inline.} =
-  wl_proxy_get_user_data(cast[ptr wl_proxy](wl_shm))
+  cast[ptr wl_proxy](wl_shm).get_user_data()
 proc get_version*(wl_shm: ptr wl_shm): uint32 {.inline.} =
-  wl_proxy_get_version(cast[ptr wl_proxy](wl_shm))
+  cast[ptr wl_proxy](wl_shm).get_version()
 proc destroy*(wl_shm: ptr wl_shm) {.inline.} =
-  wl_proxy_destroy(cast[ptr wl_proxy](wl_shm))
+  destroy cast[ptr wl_proxy](wl_shm)
 proc create_pool*(wl_shm: ptr wl_shm; fd: int32; size: int32): ptr wl_shm_pool {.inline.} =
   ## create a shm pool
   ## 
@@ -255,7 +255,7 @@ proc create_pool*(wl_shm: ptr wl_shm; fd: int32; size: int32): ptr wl_shm_pool {
   ## 	objects.  The server will mmap size bytes of the passed file
   ## 	descriptor, to use as backing memory for the pool.
   ## 
-  cast[ptr wl_shm_pool](wl_proxy_marshal_flags(cast[ptr wl_proxy](wl_shm), wl_shm_request_create_pool.ord, addr wl_shm_pool_interface, wl_proxy_get_version(cast[ptr wl_proxy](wl_shm)), 0, nil, fd, size))
+  cast[ptr wl_shm_pool](cast[ptr wl_proxy](wl_shm).marshal_flags(wl_shm_request_create_pool.ord, addr wl_shm_pool_interface, cast[ptr wl_proxy](wl_shm).get_version(), 0, nil, fd, size))
 proc release*(wl_shm: ptr wl_shm) {.inline.} =
   ## release the shm object
   ## 
@@ -264,21 +264,21 @@ proc release*(wl_shm: ptr wl_shm) {.inline.} =
   ## 
   ## 	Objects created via this interface remain unaffected.
   ## 
-  wl_proxy_marshal_flags(cast[ptr wl_proxy](wl_shm), wl_shm_request_release.ord, nil, wl_proxy_get_version(cast[ptr wl_proxy](wl_shm)), WL_MARSHAL_FLAG_DESTROY)
+  cast[ptr wl_proxy](wl_shm).marshal_flags(wl_shm_request_release.ord, nil, cast[ptr wl_proxy](wl_shm).get_version(), WL_MARSHAL_FLAG_DESTROY)
 type WlBufferListener* = object
   release*: proc(
     data: pointer;
     wl_buffer: ptr wl_buffer;
   ) {.nimcall.}
 proc add_listener*(wl_buffer: ptr wl_buffer; listener: ptr WlBufferListener; data: pointer): int {.inline.} =
-  wl_proxy_add_listener(cast[ptr wl_proxy](wl_buffer), listener, data)
+  cast[ptr wl_proxy](wl_buffer).add_listener(listener, data)
 
 proc set_user_data*(wl_buffer: ptr wl_buffer; user_data: pointer) {.inline.} =
-  wl_proxy_set_user_data(cast[ptr wl_proxy](wl_buffer), user_data)
+  cast[ptr wl_proxy](wl_buffer).set_user_data(user_data)
 proc get_user_data*(wl_buffer: ptr wl_buffer): pointer {.inline.} =
-  wl_proxy_get_user_data(cast[ptr wl_proxy](wl_buffer))
+  cast[ptr wl_proxy](wl_buffer).get_user_data()
 proc get_version*(wl_buffer: ptr wl_buffer): uint32 {.inline.} =
-  wl_proxy_get_version(cast[ptr wl_proxy](wl_buffer))
+  cast[ptr wl_proxy](wl_buffer).get_version()
 proc destroy*(wl_buffer: ptr wl_buffer) {.inline.} =
   ## destroy a buffer
   ## 
@@ -287,7 +287,7 @@ proc destroy*(wl_buffer: ptr wl_buffer) {.inline.} =
   ## 
   ## 	For possible side-effects to a surface, see wl_surface.attach.
   ## 
-  wl_proxy_marshal_flags(cast[ptr wl_proxy](wl_buffer), wl_buffer_request_destroy.ord, nil, wl_proxy_get_version(cast[ptr wl_proxy](wl_buffer)), WL_MARSHAL_FLAG_DESTROY)
+  cast[ptr wl_proxy](wl_buffer).marshal_flags(wl_buffer_request_destroy.ord, nil, cast[ptr wl_proxy](wl_buffer).get_version(), WL_MARSHAL_FLAG_DESTROY)
 type WlDataOfferListener* = object
   offer*: proc(
     data: pointer;
@@ -305,14 +305,14 @@ type WlDataOfferListener* = object
     dnd_action: uint32;
   ) {.nimcall.}
 proc add_listener*(wl_data_offer: ptr wl_data_offer; listener: ptr WlDataOfferListener; data: pointer): int {.inline.} =
-  wl_proxy_add_listener(cast[ptr wl_proxy](wl_data_offer), listener, data)
+  cast[ptr wl_proxy](wl_data_offer).add_listener(listener, data)
 
 proc set_user_data*(wl_data_offer: ptr wl_data_offer; user_data: pointer) {.inline.} =
-  wl_proxy_set_user_data(cast[ptr wl_proxy](wl_data_offer), user_data)
+  cast[ptr wl_proxy](wl_data_offer).set_user_data(user_data)
 proc get_user_data*(wl_data_offer: ptr wl_data_offer): pointer {.inline.} =
-  wl_proxy_get_user_data(cast[ptr wl_proxy](wl_data_offer))
+  cast[ptr wl_proxy](wl_data_offer).get_user_data()
 proc get_version*(wl_data_offer: ptr wl_data_offer): uint32 {.inline.} =
-  wl_proxy_get_version(cast[ptr wl_proxy](wl_data_offer))
+  cast[ptr wl_proxy](wl_data_offer).get_version()
 proc accept*(wl_data_offer: ptr wl_data_offer; serial: uint32; mime_type: cstring) {.inline.} =
   ## accept one of the offered mime types
   ## 
@@ -331,7 +331,7 @@ proc accept*(wl_data_offer: ptr wl_data_offer; serial: uint32; mime_type: cstrin
   ## 	wl_data_source.cancelled. Clients may still use this event in
   ## 	conjunction with wl_data_source.action for feedback.
   ## 
-  wl_proxy_marshal_flags(cast[ptr wl_proxy](wl_data_offer), wl_data_offer_request_accept.ord, nil, wl_proxy_get_version(cast[ptr wl_proxy](wl_data_offer)), 0, serial, mime_type)
+  cast[ptr wl_proxy](wl_data_offer).marshal_flags(wl_data_offer_request_accept.ord, nil, cast[ptr wl_proxy](wl_data_offer).get_version(), 0, serial, mime_type)
 proc receive*(wl_data_offer: ptr wl_data_offer; mime_type: cstring; fd: int32) {.inline.} =
   ## request that the data is transferred
   ## 
@@ -351,13 +351,13 @@ proc receive*(wl_data_offer: ptr wl_data_offer; mime_type: cstring; fd: int32) {
   ## 	clients may preemptively fetch data or examine it more closely to
   ## 	determine acceptance.
   ## 
-  wl_proxy_marshal_flags(cast[ptr wl_proxy](wl_data_offer), wl_data_offer_request_receive.ord, nil, wl_proxy_get_version(cast[ptr wl_proxy](wl_data_offer)), 0, mime_type, fd)
+  cast[ptr wl_proxy](wl_data_offer).marshal_flags(wl_data_offer_request_receive.ord, nil, cast[ptr wl_proxy](wl_data_offer).get_version(), 0, mime_type, fd)
 proc destroy*(wl_data_offer: ptr wl_data_offer) {.inline.} =
   ## destroy data offer
   ## 
   ## Destroy the data offer.
   ## 
-  wl_proxy_marshal_flags(cast[ptr wl_proxy](wl_data_offer), wl_data_offer_request_destroy.ord, nil, wl_proxy_get_version(cast[ptr wl_proxy](wl_data_offer)), WL_MARSHAL_FLAG_DESTROY)
+  cast[ptr wl_proxy](wl_data_offer).marshal_flags(wl_data_offer_request_destroy.ord, nil, cast[ptr wl_proxy](wl_data_offer).get_version(), WL_MARSHAL_FLAG_DESTROY)
 proc finish*(wl_data_offer: ptr wl_data_offer) {.inline.} =
   ## the offer will no longer be used
   ## 
@@ -376,7 +376,7 @@ proc finish*(wl_data_offer: ptr wl_data_offer) {.inline.} =
   ## 	If wl_data_offer.finish request is received for a non drag and drop
   ## 	operation, the invalid_finish protocol error is raised.
   ## 
-  wl_proxy_marshal_flags(cast[ptr wl_proxy](wl_data_offer), wl_data_offer_request_finish.ord, nil, wl_proxy_get_version(cast[ptr wl_proxy](wl_data_offer)), 0)
+  cast[ptr wl_proxy](wl_data_offer).marshal_flags(wl_data_offer_request_finish.ord, nil, cast[ptr wl_proxy](wl_data_offer).get_version(), 0)
 proc set_actions*(wl_data_offer: ptr wl_data_offer; dnd_actions: uint32; preferred_action: uint32) {.inline.} =
   ## set the available/preferred drag-and-drop actions
   ## 
@@ -412,7 +412,7 @@ proc set_actions*(wl_data_offer: ptr wl_data_offer; dnd_actions: uint32; preferr
   ## 	This request can only be made on drag-and-drop offers, a protocol error
   ## 	will be raised otherwise.
   ## 
-  wl_proxy_marshal_flags(cast[ptr wl_proxy](wl_data_offer), wl_data_offer_request_set_actions.ord, nil, wl_proxy_get_version(cast[ptr wl_proxy](wl_data_offer)), 0, dnd_actions, preferred_action)
+  cast[ptr wl_proxy](wl_data_offer).marshal_flags(wl_data_offer_request_set_actions.ord, nil, cast[ptr wl_proxy](wl_data_offer).get_version(), 0, dnd_actions, preferred_action)
 type WlDataSourceListener* = object
   target*: proc(
     data: pointer;
@@ -443,14 +443,14 @@ type WlDataSourceListener* = object
     dnd_action: uint32;
   ) {.nimcall.}
 proc add_listener*(wl_data_source: ptr wl_data_source; listener: ptr WlDataSourceListener; data: pointer): int {.inline.} =
-  wl_proxy_add_listener(cast[ptr wl_proxy](wl_data_source), listener, data)
+  cast[ptr wl_proxy](wl_data_source).add_listener(listener, data)
 
 proc set_user_data*(wl_data_source: ptr wl_data_source; user_data: pointer) {.inline.} =
-  wl_proxy_set_user_data(cast[ptr wl_proxy](wl_data_source), user_data)
+  cast[ptr wl_proxy](wl_data_source).set_user_data(user_data)
 proc get_user_data*(wl_data_source: ptr wl_data_source): pointer {.inline.} =
-  wl_proxy_get_user_data(cast[ptr wl_proxy](wl_data_source))
+  cast[ptr wl_proxy](wl_data_source).get_user_data()
 proc get_version*(wl_data_source: ptr wl_data_source): uint32 {.inline.} =
-  wl_proxy_get_version(cast[ptr wl_proxy](wl_data_source))
+  cast[ptr wl_proxy](wl_data_source).get_version()
 proc offer*(wl_data_source: ptr wl_data_source; mime_type: cstring) {.inline.} =
   ## add an offered mime type
   ## 
@@ -458,13 +458,13 @@ proc offer*(wl_data_source: ptr wl_data_source; mime_type: cstring) {.inline.} =
   ## 	advertised to targets.  Can be called several times to offer
   ## 	multiple types.
   ## 
-  wl_proxy_marshal_flags(cast[ptr wl_proxy](wl_data_source), wl_data_source_request_offer.ord, nil, wl_proxy_get_version(cast[ptr wl_proxy](wl_data_source)), 0, mime_type)
+  cast[ptr wl_proxy](wl_data_source).marshal_flags(wl_data_source_request_offer.ord, nil, cast[ptr wl_proxy](wl_data_source).get_version(), 0, mime_type)
 proc destroy*(wl_data_source: ptr wl_data_source) {.inline.} =
   ## destroy the data source
   ## 
   ## Destroy the data source.
   ## 
-  wl_proxy_marshal_flags(cast[ptr wl_proxy](wl_data_source), wl_data_source_request_destroy.ord, nil, wl_proxy_get_version(cast[ptr wl_proxy](wl_data_source)), WL_MARSHAL_FLAG_DESTROY)
+  cast[ptr wl_proxy](wl_data_source).marshal_flags(wl_data_source_request_destroy.ord, nil, cast[ptr wl_proxy](wl_data_source).get_version(), WL_MARSHAL_FLAG_DESTROY)
 proc set_actions*(wl_data_source: ptr wl_data_source; dnd_actions: uint32) {.inline.} =
   ## set the available drag-and-drop actions
   ## 
@@ -482,7 +482,7 @@ proc set_actions*(wl_data_source: ptr wl_data_source; dnd_actions: uint32) {.inl
   ## 	wl_data_device.start_drag. Attempting to use the source other than
   ## 	for drag-and-drop will raise a protocol error.
   ## 
-  wl_proxy_marshal_flags(cast[ptr wl_proxy](wl_data_source), wl_data_source_request_set_actions.ord, nil, wl_proxy_get_version(cast[ptr wl_proxy](wl_data_source)), 0, dnd_actions)
+  cast[ptr wl_proxy](wl_data_source).marshal_flags(wl_data_source_request_set_actions.ord, nil, cast[ptr wl_proxy](wl_data_source).get_version(), 0, dnd_actions)
 type WlDataDeviceListener* = object
   data_offer*: proc(
     data: pointer;
@@ -519,16 +519,16 @@ type WlDataDeviceListener* = object
     id: ptr wl_data_offer;
   ) {.nimcall.}
 proc add_listener*(wl_data_device: ptr wl_data_device; listener: ptr WlDataDeviceListener; data: pointer): int {.inline.} =
-  wl_proxy_add_listener(cast[ptr wl_proxy](wl_data_device), listener, data)
+  cast[ptr wl_proxy](wl_data_device).add_listener(listener, data)
 
 proc set_user_data*(wl_data_device: ptr wl_data_device; user_data: pointer) {.inline.} =
-  wl_proxy_set_user_data(cast[ptr wl_proxy](wl_data_device), user_data)
+  cast[ptr wl_proxy](wl_data_device).set_user_data(user_data)
 proc get_user_data*(wl_data_device: ptr wl_data_device): pointer {.inline.} =
-  wl_proxy_get_user_data(cast[ptr wl_proxy](wl_data_device))
+  cast[ptr wl_proxy](wl_data_device).get_user_data()
 proc get_version*(wl_data_device: ptr wl_data_device): uint32 {.inline.} =
-  wl_proxy_get_version(cast[ptr wl_proxy](wl_data_device))
+  cast[ptr wl_proxy](wl_data_device).get_version()
 proc destroy*(wl_data_device: ptr wl_data_device) {.inline.} =
-  wl_proxy_destroy(cast[ptr wl_proxy](wl_data_device))
+  destroy cast[ptr wl_proxy](wl_data_device)
 proc start_drag*(wl_data_device: ptr wl_data_device; source: ptr wl_data_source; origin: ptr wl_surface; icon: ptr wl_surface; serial: uint32) {.inline.} =
   ## start drag-and-drop operation
   ## 
@@ -562,7 +562,7 @@ proc start_drag*(wl_data_device: ptr wl_data_device; source: ptr wl_data_source;
   ## 	start_drag requests. Attempting to reuse a previously-used source
   ## 	may send a used_source error.
   ## 
-  wl_proxy_marshal_flags(cast[ptr wl_proxy](wl_data_device), wl_data_device_request_start_drag.ord, nil, wl_proxy_get_version(cast[ptr wl_proxy](wl_data_device)), 0, source, origin, icon, serial)
+  cast[ptr wl_proxy](wl_data_device).marshal_flags(wl_data_device_request_start_drag.ord, nil, cast[ptr wl_proxy](wl_data_device).get_version(), 0, source, origin, icon, serial)
 proc set_selection*(wl_data_device: ptr wl_data_device; source: ptr wl_data_source; serial: uint32) {.inline.} =
   ## copy data to the selection
   ## 
@@ -575,41 +575,41 @@ proc set_selection*(wl_data_device: ptr wl_data_device; source: ptr wl_data_sour
   ## 	start_drag requests. Attempting to reuse a previously-used source
   ## 	may send a used_source error.
   ## 
-  wl_proxy_marshal_flags(cast[ptr wl_proxy](wl_data_device), wl_data_device_request_set_selection.ord, nil, wl_proxy_get_version(cast[ptr wl_proxy](wl_data_device)), 0, source, serial)
+  cast[ptr wl_proxy](wl_data_device).marshal_flags(wl_data_device_request_set_selection.ord, nil, cast[ptr wl_proxy](wl_data_device).get_version(), 0, source, serial)
 proc release*(wl_data_device: ptr wl_data_device) {.inline.} =
   ## destroy data device
   ## 
   ## This request destroys the data device.
   ## 
-  wl_proxy_marshal_flags(cast[ptr wl_proxy](wl_data_device), wl_data_device_request_release.ord, nil, wl_proxy_get_version(cast[ptr wl_proxy](wl_data_device)), WL_MARSHAL_FLAG_DESTROY)
+  cast[ptr wl_proxy](wl_data_device).marshal_flags(wl_data_device_request_release.ord, nil, cast[ptr wl_proxy](wl_data_device).get_version(), WL_MARSHAL_FLAG_DESTROY)
 proc set_user_data*(wl_data_device_manager: ptr wl_data_device_manager; user_data: pointer) {.inline.} =
-  wl_proxy_set_user_data(cast[ptr wl_proxy](wl_data_device_manager), user_data)
+  cast[ptr wl_proxy](wl_data_device_manager).set_user_data(user_data)
 proc get_user_data*(wl_data_device_manager: ptr wl_data_device_manager): pointer {.inline.} =
-  wl_proxy_get_user_data(cast[ptr wl_proxy](wl_data_device_manager))
+  cast[ptr wl_proxy](wl_data_device_manager).get_user_data()
 proc get_version*(wl_data_device_manager: ptr wl_data_device_manager): uint32 {.inline.} =
-  wl_proxy_get_version(cast[ptr wl_proxy](wl_data_device_manager))
+  cast[ptr wl_proxy](wl_data_device_manager).get_version()
 proc destroy*(wl_data_device_manager: ptr wl_data_device_manager) {.inline.} =
-  wl_proxy_destroy(cast[ptr wl_proxy](wl_data_device_manager))
+  destroy cast[ptr wl_proxy](wl_data_device_manager)
 proc create_data_source*(wl_data_device_manager: ptr wl_data_device_manager): ptr wl_data_source {.inline.} =
   ## create a new data source
   ## 
   ## Create a new data source.
   ## 
-  cast[ptr wl_data_source](wl_proxy_marshal_flags(cast[ptr wl_proxy](wl_data_device_manager), wl_data_device_manager_request_create_data_source.ord, addr wl_data_source_interface, wl_proxy_get_version(cast[ptr wl_proxy](wl_data_device_manager)), 0, nil))
+  cast[ptr wl_data_source](cast[ptr wl_proxy](wl_data_device_manager).marshal_flags(wl_data_device_manager_request_create_data_source.ord, addr wl_data_source_interface, cast[ptr wl_proxy](wl_data_device_manager).get_version(), 0, nil))
 proc get_data_device*(wl_data_device_manager: ptr wl_data_device_manager; seat: ptr wl_seat): ptr wl_data_device {.inline.} =
   ## create a new data device
   ## 
   ## Create a new data device for a given seat.
   ## 
-  cast[ptr wl_data_device](wl_proxy_marshal_flags(cast[ptr wl_proxy](wl_data_device_manager), wl_data_device_manager_request_get_data_device.ord, addr wl_data_device_interface, wl_proxy_get_version(cast[ptr wl_proxy](wl_data_device_manager)), 0, nil, seat))
+  cast[ptr wl_data_device](cast[ptr wl_proxy](wl_data_device_manager).marshal_flags(wl_data_device_manager_request_get_data_device.ord, addr wl_data_device_interface, cast[ptr wl_proxy](wl_data_device_manager).get_version(), 0, nil, seat))
 proc set_user_data*(wl_shell: ptr wl_shell; user_data: pointer) {.inline.} =
-  wl_proxy_set_user_data(cast[ptr wl_proxy](wl_shell), user_data)
+  cast[ptr wl_proxy](wl_shell).set_user_data(user_data)
 proc get_user_data*(wl_shell: ptr wl_shell): pointer {.inline.} =
-  wl_proxy_get_user_data(cast[ptr wl_proxy](wl_shell))
+  cast[ptr wl_proxy](wl_shell).get_user_data()
 proc get_version*(wl_shell: ptr wl_shell): uint32 {.inline.} =
-  wl_proxy_get_version(cast[ptr wl_proxy](wl_shell))
+  cast[ptr wl_proxy](wl_shell).get_version()
 proc destroy*(wl_shell: ptr wl_shell) {.inline.} =
-  wl_proxy_destroy(cast[ptr wl_proxy](wl_shell))
+  destroy cast[ptr wl_proxy](wl_shell)
 proc get_shell_surface*(wl_shell: ptr wl_shell; surface: ptr wl_surface): ptr wl_shell_surface {.inline.} =
   ## create a shell surface from a surface
   ## 
@@ -619,7 +619,7 @@ proc get_shell_surface*(wl_shell: ptr wl_shell; surface: ptr wl_surface): ptr wl
   ## 
   ## 	Only one shell surface can be associated with a given surface.
   ## 
-  cast[ptr wl_shell_surface](wl_proxy_marshal_flags(cast[ptr wl_proxy](wl_shell), wl_shell_request_get_shell_surface.ord, addr wl_shell_surface_interface, wl_proxy_get_version(cast[ptr wl_proxy](wl_shell)), 0, nil, surface))
+  cast[ptr wl_shell_surface](cast[ptr wl_proxy](wl_shell).marshal_flags(wl_shell_request_get_shell_surface.ord, addr wl_shell_surface_interface, cast[ptr wl_proxy](wl_shell).get_version(), 0, nil, surface))
 type WlShellSurfaceListener* = object
   ping*: proc(
     data: pointer;
@@ -638,23 +638,23 @@ type WlShellSurfaceListener* = object
     wl_shell_surface: ptr wl_shell_surface;
   ) {.nimcall.}
 proc add_listener*(wl_shell_surface: ptr wl_shell_surface; listener: ptr WlShellSurfaceListener; data: pointer): int {.inline.} =
-  wl_proxy_add_listener(cast[ptr wl_proxy](wl_shell_surface), listener, data)
+  cast[ptr wl_proxy](wl_shell_surface).add_listener(listener, data)
 
 proc set_user_data*(wl_shell_surface: ptr wl_shell_surface; user_data: pointer) {.inline.} =
-  wl_proxy_set_user_data(cast[ptr wl_proxy](wl_shell_surface), user_data)
+  cast[ptr wl_proxy](wl_shell_surface).set_user_data(user_data)
 proc get_user_data*(wl_shell_surface: ptr wl_shell_surface): pointer {.inline.} =
-  wl_proxy_get_user_data(cast[ptr wl_proxy](wl_shell_surface))
+  cast[ptr wl_proxy](wl_shell_surface).get_user_data()
 proc get_version*(wl_shell_surface: ptr wl_shell_surface): uint32 {.inline.} =
-  wl_proxy_get_version(cast[ptr wl_proxy](wl_shell_surface))
+  cast[ptr wl_proxy](wl_shell_surface).get_version()
 proc destroy*(wl_shell_surface: ptr wl_shell_surface) {.inline.} =
-  wl_proxy_destroy(cast[ptr wl_proxy](wl_shell_surface))
+  destroy cast[ptr wl_proxy](wl_shell_surface)
 proc pong*(wl_shell_surface: ptr wl_shell_surface; serial: uint32) {.inline.} =
   ## respond to a ping event
   ## 
   ## A client must respond to a ping event with a pong request or
   ## 	the client may be deemed unresponsive.
   ## 
-  wl_proxy_marshal_flags(cast[ptr wl_proxy](wl_shell_surface), wl_shell_surface_request_pong.ord, nil, wl_proxy_get_version(cast[ptr wl_proxy](wl_shell_surface)), 0, serial)
+  cast[ptr wl_proxy](wl_shell_surface).marshal_flags(wl_shell_surface_request_pong.ord, nil, cast[ptr wl_proxy](wl_shell_surface).get_version(), 0, serial)
 proc move*(wl_shell_surface: ptr wl_shell_surface; seat: ptr wl_seat; serial: uint32) {.inline.} =
   ## start an interactive move
   ## 
@@ -664,7 +664,7 @@ proc move*(wl_shell_surface: ptr wl_shell_surface; seat: ptr wl_seat; serial: ui
   ## 	The server may ignore move requests depending on the state of
   ## 	the surface (e.g. fullscreen or maximized).
   ## 
-  wl_proxy_marshal_flags(cast[ptr wl_proxy](wl_shell_surface), wl_shell_surface_request_move.ord, nil, wl_proxy_get_version(cast[ptr wl_proxy](wl_shell_surface)), 0, seat, serial)
+  cast[ptr wl_proxy](wl_shell_surface).marshal_flags(wl_shell_surface_request_move.ord, nil, cast[ptr wl_proxy](wl_shell_surface).get_version(), 0, seat, serial)
 proc resize*(wl_shell_surface: ptr wl_shell_surface; seat: ptr wl_seat; serial: uint32; edges: uint32) {.inline.} =
   ## start an interactive resize
   ## 
@@ -674,7 +674,7 @@ proc resize*(wl_shell_surface: ptr wl_shell_surface; seat: ptr wl_seat; serial: 
   ## 	The server may ignore resize requests depending on the state of
   ## 	the surface (e.g. fullscreen or maximized).
   ## 
-  wl_proxy_marshal_flags(cast[ptr wl_proxy](wl_shell_surface), wl_shell_surface_request_resize.ord, nil, wl_proxy_get_version(cast[ptr wl_proxy](wl_shell_surface)), 0, seat, serial, edges)
+  cast[ptr wl_proxy](wl_shell_surface).marshal_flags(wl_shell_surface_request_resize.ord, nil, cast[ptr wl_proxy](wl_shell_surface).get_version(), 0, seat, serial, edges)
 proc set_toplevel*(wl_shell_surface: ptr wl_shell_surface) {.inline.} =
   ## make the surface a toplevel surface
   ## 
@@ -682,7 +682,7 @@ proc set_toplevel*(wl_shell_surface: ptr wl_shell_surface) {.inline.} =
   ## 
   ## 	A toplevel surface is not fullscreen, maximized or transient.
   ## 
-  wl_proxy_marshal_flags(cast[ptr wl_proxy](wl_shell_surface), wl_shell_surface_request_set_toplevel.ord, nil, wl_proxy_get_version(cast[ptr wl_proxy](wl_shell_surface)), 0)
+  cast[ptr wl_proxy](wl_shell_surface).marshal_flags(wl_shell_surface_request_set_toplevel.ord, nil, cast[ptr wl_proxy](wl_shell_surface).get_version(), 0)
 proc set_transient*(wl_shell_surface: ptr wl_shell_surface; parent: ptr wl_surface; x: int32; y: int32; flags: uint32) {.inline.} =
   ## make the surface a transient surface
   ## 
@@ -694,7 +694,7 @@ proc set_transient*(wl_shell_surface: ptr wl_shell_surface; parent: ptr wl_surfa
   ## 
   ## 	The flags argument controls details of the transient behaviour.
   ## 
-  wl_proxy_marshal_flags(cast[ptr wl_proxy](wl_shell_surface), wl_shell_surface_request_set_transient.ord, nil, wl_proxy_get_version(cast[ptr wl_proxy](wl_shell_surface)), 0, parent, x, y, flags)
+  cast[ptr wl_proxy](wl_shell_surface).marshal_flags(wl_shell_surface_request_set_transient.ord, nil, cast[ptr wl_proxy](wl_shell_surface).get_version(), 0, parent, x, y, flags)
 proc set_fullscreen*(wl_shell_surface: ptr wl_shell_surface; `method`: uint32; framerate: uint32; output: ptr wl_output) {.inline.} =
   ## make the surface a fullscreen surface
   ## 
@@ -732,7 +732,7 @@ proc set_fullscreen*(wl_shell_surface: ptr wl_shell_surface; `method`: uint32; f
   ## 	with the dimensions for the output on which the surface will
   ## 	be made fullscreen.
   ## 
-  wl_proxy_marshal_flags(cast[ptr wl_proxy](wl_shell_surface), wl_shell_surface_request_set_fullscreen.ord, nil, wl_proxy_get_version(cast[ptr wl_proxy](wl_shell_surface)), 0, `method`, framerate, output)
+  cast[ptr wl_proxy](wl_shell_surface).marshal_flags(wl_shell_surface_request_set_fullscreen.ord, nil, cast[ptr wl_proxy](wl_shell_surface).get_version(), 0, `method`, framerate, output)
 proc set_popup*(wl_shell_surface: ptr wl_shell_surface; seat: ptr wl_seat; serial: uint32; parent: ptr wl_surface; x: int32; y: int32; flags: uint32) {.inline.} =
   ## make the surface a popup surface
   ## 
@@ -756,7 +756,7 @@ proc set_popup*(wl_shell_surface: ptr wl_shell_surface; seat: ptr wl_seat; seria
   ## 	corner of the surface relative to the upper left corner of the
   ## 	parent surface, in surface-local coordinates.
   ## 
-  wl_proxy_marshal_flags(cast[ptr wl_proxy](wl_shell_surface), wl_shell_surface_request_set_popup.ord, nil, wl_proxy_get_version(cast[ptr wl_proxy](wl_shell_surface)), 0, seat, serial, parent, x, y, flags)
+  cast[ptr wl_proxy](wl_shell_surface).marshal_flags(wl_shell_surface_request_set_popup.ord, nil, cast[ptr wl_proxy](wl_shell_surface).get_version(), 0, seat, serial, parent, x, y, flags)
 proc set_maximized*(wl_shell_surface: ptr wl_shell_surface; output: ptr wl_output) {.inline.} =
   ## make the surface a maximized surface
   ## 
@@ -779,7 +779,7 @@ proc set_maximized*(wl_shell_surface: ptr wl_shell_surface; output: ptr wl_outpu
   ## 
   ## 	The details depend on the compositor implementation.
   ## 
-  wl_proxy_marshal_flags(cast[ptr wl_proxy](wl_shell_surface), wl_shell_surface_request_set_maximized.ord, nil, wl_proxy_get_version(cast[ptr wl_proxy](wl_shell_surface)), 0, output)
+  cast[ptr wl_proxy](wl_shell_surface).marshal_flags(wl_shell_surface_request_set_maximized.ord, nil, cast[ptr wl_proxy](wl_shell_surface).get_version(), 0, output)
 proc set_title*(wl_shell_surface: ptr wl_shell_surface; title: cstring) {.inline.} =
   ## set surface title
   ## 
@@ -791,7 +791,7 @@ proc set_title*(wl_shell_surface: ptr wl_shell_surface; title: cstring) {.inline
   ## 
   ## 	The string must be encoded in UTF-8.
   ## 
-  wl_proxy_marshal_flags(cast[ptr wl_proxy](wl_shell_surface), wl_shell_surface_request_set_title.ord, nil, wl_proxy_get_version(cast[ptr wl_proxy](wl_shell_surface)), 0, title)
+  cast[ptr wl_proxy](wl_shell_surface).marshal_flags(wl_shell_surface_request_set_title.ord, nil, cast[ptr wl_proxy](wl_shell_surface).get_version(), 0, title)
 proc set_class*(wl_shell_surface: ptr wl_shell_surface; class: cstring) {.inline.} =
   ## set surface class
   ## 
@@ -802,7 +802,7 @@ proc set_class*(wl_shell_surface: ptr wl_shell_surface; class: cstring) {.inline
   ## 	file name (or the full path if it is a non-standard location) of
   ## 	the application's .desktop file as the class.
   ## 
-  wl_proxy_marshal_flags(cast[ptr wl_proxy](wl_shell_surface), wl_shell_surface_request_set_class.ord, nil, wl_proxy_get_version(cast[ptr wl_proxy](wl_shell_surface)), 0, class)
+  cast[ptr wl_proxy](wl_shell_surface).marshal_flags(wl_shell_surface_request_set_class.ord, nil, cast[ptr wl_proxy](wl_shell_surface).get_version(), 0, class)
 type WlSurfaceListener* = object
   enter*: proc(
     data: pointer;
@@ -825,20 +825,20 @@ type WlSurfaceListener* = object
     transform: uint32;
   ) {.nimcall.}
 proc add_listener*(wl_surface: ptr wl_surface; listener: ptr WlSurfaceListener; data: pointer): int {.inline.} =
-  wl_proxy_add_listener(cast[ptr wl_proxy](wl_surface), listener, data)
+  cast[ptr wl_proxy](wl_surface).add_listener(listener, data)
 
 proc set_user_data*(wl_surface: ptr wl_surface; user_data: pointer) {.inline.} =
-  wl_proxy_set_user_data(cast[ptr wl_proxy](wl_surface), user_data)
+  cast[ptr wl_proxy](wl_surface).set_user_data(user_data)
 proc get_user_data*(wl_surface: ptr wl_surface): pointer {.inline.} =
-  wl_proxy_get_user_data(cast[ptr wl_proxy](wl_surface))
+  cast[ptr wl_proxy](wl_surface).get_user_data()
 proc get_version*(wl_surface: ptr wl_surface): uint32 {.inline.} =
-  wl_proxy_get_version(cast[ptr wl_proxy](wl_surface))
+  cast[ptr wl_proxy](wl_surface).get_version()
 proc destroy*(wl_surface: ptr wl_surface) {.inline.} =
   ## delete surface
   ## 
   ## Deletes the surface and invalidates its object ID.
   ## 
-  wl_proxy_marshal_flags(cast[ptr wl_proxy](wl_surface), wl_surface_request_destroy.ord, nil, wl_proxy_get_version(cast[ptr wl_proxy](wl_surface)), WL_MARSHAL_FLAG_DESTROY)
+  cast[ptr wl_proxy](wl_surface).marshal_flags(wl_surface_request_destroy.ord, nil, cast[ptr wl_proxy](wl_surface).get_version(), WL_MARSHAL_FLAG_DESTROY)
 proc attach*(wl_surface: ptr wl_surface; buffer: ptr wl_buffer; x: int32; y: int32) {.inline.} =
   ## set the surface contents
   ## 
@@ -907,7 +907,7 @@ proc attach*(wl_surface: ptr wl_surface; buffer: ptr wl_buffer; x: int32; y: int
   ## 	ensure that they explicitly remove content from surfaces, even after
   ## 	destroying buffers.
   ## 
-  wl_proxy_marshal_flags(cast[ptr wl_proxy](wl_surface), wl_surface_request_attach.ord, nil, wl_proxy_get_version(cast[ptr wl_proxy](wl_surface)), 0, buffer, x, y)
+  cast[ptr wl_proxy](wl_surface).marshal_flags(wl_surface_request_attach.ord, nil, cast[ptr wl_proxy](wl_surface).get_version(), 0, buffer, x, y)
 proc damage*(wl_surface: ptr wl_surface; x: int32; y: int32; width: int32; height: int32) {.inline.} =
   ## mark part of the surface damaged
   ## 
@@ -933,7 +933,7 @@ proc damage*(wl_surface: ptr wl_surface; x: int32; y: int32; width: int32; heigh
   ## 	posted with wl_surface.damage_buffer which uses buffer coordinates
   ## 	instead of surface coordinates.
   ## 
-  wl_proxy_marshal_flags(cast[ptr wl_proxy](wl_surface), wl_surface_request_damage.ord, nil, wl_proxy_get_version(cast[ptr wl_proxy](wl_surface)), 0, x, y, width, height)
+  cast[ptr wl_proxy](wl_surface).marshal_flags(wl_surface_request_damage.ord, nil, cast[ptr wl_proxy](wl_surface).get_version(), 0, x, y, width, height)
 proc frame*(wl_surface: ptr wl_surface): ptr wl_callback {.inline.} =
   ## request a frame throttling hint
   ## 
@@ -970,7 +970,7 @@ proc frame*(wl_surface: ptr wl_surface): ptr wl_callback {.inline.} =
   ## 	The callback_data passed in the callback is the current time, in
   ## 	milliseconds, with an undefined base.
   ## 
-  cast[ptr wl_callback](wl_proxy_marshal_flags(cast[ptr wl_proxy](wl_surface), wl_surface_request_frame.ord, addr wl_callback_interface, wl_proxy_get_version(cast[ptr wl_proxy](wl_surface)), 0, nil))
+  cast[ptr wl_callback](cast[ptr wl_proxy](wl_surface).marshal_flags(wl_surface_request_frame.ord, addr wl_callback_interface, cast[ptr wl_proxy](wl_surface).get_version(), 0, nil))
 proc set_opaque_region*(wl_surface: ptr wl_surface; region: ptr wl_region) {.inline.} =
   ## set opaque region
   ## 
@@ -999,7 +999,7 @@ proc set_opaque_region*(wl_surface: ptr wl_surface; region: ptr wl_region) {.inl
   ## 	destroyed immediately. A NULL wl_region causes the pending opaque
   ## 	region to be set to empty.
   ## 
-  wl_proxy_marshal_flags(cast[ptr wl_proxy](wl_surface), wl_surface_request_set_opaque_region.ord, nil, wl_proxy_get_version(cast[ptr wl_proxy](wl_surface)), 0, region)
+  cast[ptr wl_proxy](wl_surface).marshal_flags(wl_surface_request_set_opaque_region.ord, nil, cast[ptr wl_proxy](wl_surface).get_version(), 0, region)
 proc set_input_region*(wl_surface: ptr wl_surface; region: ptr wl_region) {.inline.} =
   ## set input region
   ## 
@@ -1026,7 +1026,7 @@ proc set_input_region*(wl_surface: ptr wl_surface; region: ptr wl_region) {.inli
   ## 	immediately. A NULL wl_region causes the input region to be set
   ## 	to infinite.
   ## 
-  wl_proxy_marshal_flags(cast[ptr wl_proxy](wl_surface), wl_surface_request_set_input_region.ord, nil, wl_proxy_get_version(cast[ptr wl_proxy](wl_surface)), 0, region)
+  cast[ptr wl_proxy](wl_surface).marshal_flags(wl_surface_request_set_input_region.ord, nil, cast[ptr wl_proxy](wl_surface).get_version(), 0, region)
 proc commit*(wl_surface: ptr wl_surface) {.inline.} =
   ## commit pending surface state
   ## 
@@ -1050,7 +1050,7 @@ proc commit*(wl_surface: ptr wl_surface) {.inline.} =
   ## 
   ## 	Other interfaces may add further double-buffered surface state.
   ## 
-  wl_proxy_marshal_flags(cast[ptr wl_proxy](wl_surface), wl_surface_request_commit.ord, nil, wl_proxy_get_version(cast[ptr wl_proxy](wl_surface)), 0)
+  cast[ptr wl_proxy](wl_surface).marshal_flags(wl_surface_request_commit.ord, nil, cast[ptr wl_proxy](wl_surface).get_version(), 0)
 proc set_buffer_transform*(wl_surface: ptr wl_surface; transform: int32) {.inline.} =
   ## sets the buffer transformation
   ## 
@@ -1086,7 +1086,7 @@ proc set_buffer_transform*(wl_surface: ptr wl_surface; transform: int32) {.inlin
   ## 	wl_output.transform enum the invalid_transform protocol error
   ## 	is raised.
   ## 
-  wl_proxy_marshal_flags(cast[ptr wl_proxy](wl_surface), wl_surface_request_set_buffer_transform.ord, nil, wl_proxy_get_version(cast[ptr wl_proxy](wl_surface)), 0, transform)
+  cast[ptr wl_proxy](wl_surface).marshal_flags(wl_surface_request_set_buffer_transform.ord, nil, cast[ptr wl_proxy](wl_surface).get_version(), 0, transform)
 proc set_buffer_scale*(wl_surface: ptr wl_surface; scale: int32) {.inline.} =
   ## sets the buffer scaling factor
   ## 
@@ -1114,7 +1114,7 @@ proc set_buffer_scale*(wl_surface: ptr wl_surface; scale: int32) {.inline.} =
   ## 	If scale is not greater than 0 the invalid_scale protocol error is
   ## 	raised.
   ## 
-  wl_proxy_marshal_flags(cast[ptr wl_proxy](wl_surface), wl_surface_request_set_buffer_scale.ord, nil, wl_proxy_get_version(cast[ptr wl_proxy](wl_surface)), 0, scale)
+  cast[ptr wl_proxy](wl_surface).marshal_flags(wl_surface_request_set_buffer_scale.ord, nil, cast[ptr wl_proxy](wl_surface).get_version(), 0, scale)
 proc damage_buffer*(wl_surface: ptr wl_surface; x: int32; y: int32; width: int32; height: int32) {.inline.} =
   ## mark part of the surface damaged using buffer coordinates
   ## 
@@ -1151,7 +1151,7 @@ proc damage_buffer*(wl_surface: ptr wl_surface; x: int32; y: int32; width: int32
   ## 	two requests separately and only transform from one to the other
   ## 	after receiving the wl_surface.commit.
   ## 
-  wl_proxy_marshal_flags(cast[ptr wl_proxy](wl_surface), wl_surface_request_damage_buffer.ord, nil, wl_proxy_get_version(cast[ptr wl_proxy](wl_surface)), 0, x, y, width, height)
+  cast[ptr wl_proxy](wl_surface).marshal_flags(wl_surface_request_damage_buffer.ord, nil, cast[ptr wl_proxy](wl_surface).get_version(), 0, x, y, width, height)
 proc offset*(wl_surface: ptr wl_surface; x: int32; y: int32) {.inline.} =
   ## set the surface contents offset
   ## 
@@ -1168,7 +1168,7 @@ proc offset*(wl_surface: ptr wl_surface; x: int32; y: int32) {.inline.} =
   ## 	arguments in the wl_surface.attach request in wl_surface versions prior
   ## 	to 5. See wl_surface.attach for details.
   ## 
-  wl_proxy_marshal_flags(cast[ptr wl_proxy](wl_surface), wl_surface_request_offset.ord, nil, wl_proxy_get_version(cast[ptr wl_proxy](wl_surface)), 0, x, y)
+  cast[ptr wl_proxy](wl_surface).marshal_flags(wl_surface_request_offset.ord, nil, cast[ptr wl_proxy](wl_surface).get_version(), 0, x, y)
 type WlSeatListener* = object
   capabilities*: proc(
     data: pointer;
@@ -1181,16 +1181,16 @@ type WlSeatListener* = object
     name: cstring;
   ) {.nimcall.}
 proc add_listener*(wl_seat: ptr wl_seat; listener: ptr WlSeatListener; data: pointer): int {.inline.} =
-  wl_proxy_add_listener(cast[ptr wl_proxy](wl_seat), listener, data)
+  cast[ptr wl_proxy](wl_seat).add_listener(listener, data)
 
 proc set_user_data*(wl_seat: ptr wl_seat; user_data: pointer) {.inline.} =
-  wl_proxy_set_user_data(cast[ptr wl_proxy](wl_seat), user_data)
+  cast[ptr wl_proxy](wl_seat).set_user_data(user_data)
 proc get_user_data*(wl_seat: ptr wl_seat): pointer {.inline.} =
-  wl_proxy_get_user_data(cast[ptr wl_proxy](wl_seat))
+  cast[ptr wl_proxy](wl_seat).get_user_data()
 proc get_version*(wl_seat: ptr wl_seat): uint32 {.inline.} =
-  wl_proxy_get_version(cast[ptr wl_proxy](wl_seat))
+  cast[ptr wl_proxy](wl_seat).get_version()
 proc destroy*(wl_seat: ptr wl_seat) {.inline.} =
-  wl_proxy_destroy(cast[ptr wl_proxy](wl_seat))
+  destroy cast[ptr wl_proxy](wl_seat)
 proc get_pointer*(wl_seat: ptr wl_seat): ptr wl_pointer {.inline.} =
   ## return pointer object
   ## 
@@ -1203,7 +1203,7 @@ proc get_pointer*(wl_seat: ptr wl_seat): ptr wl_pointer {.inline.} =
   ## 	never had the pointer capability. The missing_capability error will
   ## 	be sent in this case.
   ## 
-  cast[ptr wl_pointer](wl_proxy_marshal_flags(cast[ptr wl_proxy](wl_seat), wl_seat_request_get_pointer.ord, addr wl_pointer_interface, wl_proxy_get_version(cast[ptr wl_proxy](wl_seat)), 0, nil))
+  cast[ptr wl_pointer](cast[ptr wl_proxy](wl_seat).marshal_flags(wl_seat_request_get_pointer.ord, addr wl_pointer_interface, cast[ptr wl_proxy](wl_seat).get_version(), 0, nil))
 proc get_keyboard*(wl_seat: ptr wl_seat): ptr wl_keyboard {.inline.} =
   ## return keyboard object
   ## 
@@ -1216,7 +1216,7 @@ proc get_keyboard*(wl_seat: ptr wl_seat): ptr wl_keyboard {.inline.} =
   ## 	never had the keyboard capability. The missing_capability error will
   ## 	be sent in this case.
   ## 
-  cast[ptr wl_keyboard](wl_proxy_marshal_flags(cast[ptr wl_proxy](wl_seat), wl_seat_request_get_keyboard.ord, addr wl_keyboard_interface, wl_proxy_get_version(cast[ptr wl_proxy](wl_seat)), 0, nil))
+  cast[ptr wl_keyboard](cast[ptr wl_proxy](wl_seat).marshal_flags(wl_seat_request_get_keyboard.ord, addr wl_keyboard_interface, cast[ptr wl_proxy](wl_seat).get_version(), 0, nil))
 proc get_touch*(wl_seat: ptr wl_seat): ptr wl_touch {.inline.} =
   ## return touch object
   ## 
@@ -1229,14 +1229,14 @@ proc get_touch*(wl_seat: ptr wl_seat): ptr wl_touch {.inline.} =
   ## 	never had the touch capability. The missing_capability error will
   ## 	be sent in this case.
   ## 
-  cast[ptr wl_touch](wl_proxy_marshal_flags(cast[ptr wl_proxy](wl_seat), wl_seat_request_get_touch.ord, addr wl_touch_interface, wl_proxy_get_version(cast[ptr wl_proxy](wl_seat)), 0, nil))
+  cast[ptr wl_touch](cast[ptr wl_proxy](wl_seat).marshal_flags(wl_seat_request_get_touch.ord, addr wl_touch_interface, cast[ptr wl_proxy](wl_seat).get_version(), 0, nil))
 proc release*(wl_seat: ptr wl_seat) {.inline.} =
   ## release the seat object
   ## 
   ## Using this request a client can tell the server that it is not going to
   ## 	use the seat object anymore.
   ## 
-  wl_proxy_marshal_flags(cast[ptr wl_proxy](wl_seat), wl_seat_request_release.ord, nil, wl_proxy_get_version(cast[ptr wl_proxy](wl_seat)), WL_MARSHAL_FLAG_DESTROY)
+  cast[ptr wl_proxy](wl_seat).marshal_flags(wl_seat_request_release.ord, nil, cast[ptr wl_proxy](wl_seat).get_version(), WL_MARSHAL_FLAG_DESTROY)
 type WlPointerListener* = object
   enter*: proc(
     data: pointer;
@@ -1308,16 +1308,16 @@ type WlPointerListener* = object
     direction: uint32;
   ) {.nimcall.}
 proc add_listener*(wl_pointer: ptr wl_pointer; listener: ptr WlPointerListener; data: pointer): int {.inline.} =
-  wl_proxy_add_listener(cast[ptr wl_proxy](wl_pointer), listener, data)
+  cast[ptr wl_proxy](wl_pointer).add_listener(listener, data)
 
 proc set_user_data*(wl_pointer: ptr wl_pointer; user_data: pointer) {.inline.} =
-  wl_proxy_set_user_data(cast[ptr wl_proxy](wl_pointer), user_data)
+  cast[ptr wl_proxy](wl_pointer).set_user_data(user_data)
 proc get_user_data*(wl_pointer: ptr wl_pointer): pointer {.inline.} =
-  wl_proxy_get_user_data(cast[ptr wl_proxy](wl_pointer))
+  cast[ptr wl_proxy](wl_pointer).get_user_data()
 proc get_version*(wl_pointer: ptr wl_pointer): uint32 {.inline.} =
-  wl_proxy_get_version(cast[ptr wl_proxy](wl_pointer))
+  cast[ptr wl_proxy](wl_pointer).get_version()
 proc destroy*(wl_pointer: ptr wl_pointer) {.inline.} =
-  wl_proxy_destroy(cast[ptr wl_proxy](wl_pointer))
+  destroy cast[ptr wl_proxy](wl_pointer)
 proc set_cursor*(wl_pointer: ptr wl_pointer; serial: uint32; surface: ptr wl_surface; hotspot_x: int32; hotspot_y: int32) {.inline.} =
   ## set the pointer surface
   ## 
@@ -1355,7 +1355,7 @@ proc set_cursor*(wl_pointer: ptr wl_pointer; serial: uint32; surface: ptr wl_sur
   ## 	serial number sent to the client. Otherwise the request will be
   ## 	ignored.
   ## 
-  wl_proxy_marshal_flags(cast[ptr wl_proxy](wl_pointer), wl_pointer_request_set_cursor.ord, nil, wl_proxy_get_version(cast[ptr wl_proxy](wl_pointer)), 0, serial, surface, hotspot_x, hotspot_y)
+  cast[ptr wl_proxy](wl_pointer).marshal_flags(wl_pointer_request_set_cursor.ord, nil, cast[ptr wl_proxy](wl_pointer).get_version(), 0, serial, surface, hotspot_x, hotspot_y)
 proc release*(wl_pointer: ptr wl_pointer) {.inline.} =
   ## release the pointer object
   ## 
@@ -1365,7 +1365,7 @@ proc release*(wl_pointer: ptr wl_pointer) {.inline.} =
   ## 	This request destroys the pointer proxy object, so clients must not call
   ## 	wl_pointer_destroy() after using this request.
   ## 
-  wl_proxy_marshal_flags(cast[ptr wl_proxy](wl_pointer), wl_pointer_request_release.ord, nil, wl_proxy_get_version(cast[ptr wl_proxy](wl_pointer)), WL_MARSHAL_FLAG_DESTROY)
+  cast[ptr wl_proxy](wl_pointer).marshal_flags(wl_pointer_request_release.ord, nil, cast[ptr wl_proxy](wl_pointer).get_version(), WL_MARSHAL_FLAG_DESTROY)
 type WlKeyboardListener* = object
   keymap*: proc(
     data: pointer;
@@ -1411,19 +1411,19 @@ type WlKeyboardListener* = object
     delay: int32;
   ) {.nimcall.}
 proc add_listener*(wl_keyboard: ptr wl_keyboard; listener: ptr WlKeyboardListener; data: pointer): int {.inline.} =
-  wl_proxy_add_listener(cast[ptr wl_proxy](wl_keyboard), listener, data)
+  cast[ptr wl_proxy](wl_keyboard).add_listener(listener, data)
 
 proc set_user_data*(wl_keyboard: ptr wl_keyboard; user_data: pointer) {.inline.} =
-  wl_proxy_set_user_data(cast[ptr wl_proxy](wl_keyboard), user_data)
+  cast[ptr wl_proxy](wl_keyboard).set_user_data(user_data)
 proc get_user_data*(wl_keyboard: ptr wl_keyboard): pointer {.inline.} =
-  wl_proxy_get_user_data(cast[ptr wl_proxy](wl_keyboard))
+  cast[ptr wl_proxy](wl_keyboard).get_user_data()
 proc get_version*(wl_keyboard: ptr wl_keyboard): uint32 {.inline.} =
-  wl_proxy_get_version(cast[ptr wl_proxy](wl_keyboard))
+  cast[ptr wl_proxy](wl_keyboard).get_version()
 proc destroy*(wl_keyboard: ptr wl_keyboard) {.inline.} =
-  wl_proxy_destroy(cast[ptr wl_proxy](wl_keyboard))
+  destroy cast[ptr wl_proxy](wl_keyboard)
 proc release*(wl_keyboard: ptr wl_keyboard) {.inline.} =
   ## release the keyboard object
-  wl_proxy_marshal_flags(cast[ptr wl_proxy](wl_keyboard), wl_keyboard_request_release.ord, nil, wl_proxy_get_version(cast[ptr wl_proxy](wl_keyboard)), WL_MARSHAL_FLAG_DESTROY)
+  cast[ptr wl_proxy](wl_keyboard).marshal_flags(wl_keyboard_request_release.ord, nil, cast[ptr wl_proxy](wl_keyboard).get_version(), WL_MARSHAL_FLAG_DESTROY)
 type WlTouchListener* = object
   down*: proc(
     data: pointer;
@@ -1472,19 +1472,19 @@ type WlTouchListener* = object
     orientation: wl_fixed_t;
   ) {.nimcall.}
 proc add_listener*(wl_touch: ptr wl_touch; listener: ptr WlTouchListener; data: pointer): int {.inline.} =
-  wl_proxy_add_listener(cast[ptr wl_proxy](wl_touch), listener, data)
+  cast[ptr wl_proxy](wl_touch).add_listener(listener, data)
 
 proc set_user_data*(wl_touch: ptr wl_touch; user_data: pointer) {.inline.} =
-  wl_proxy_set_user_data(cast[ptr wl_proxy](wl_touch), user_data)
+  cast[ptr wl_proxy](wl_touch).set_user_data(user_data)
 proc get_user_data*(wl_touch: ptr wl_touch): pointer {.inline.} =
-  wl_proxy_get_user_data(cast[ptr wl_proxy](wl_touch))
+  cast[ptr wl_proxy](wl_touch).get_user_data()
 proc get_version*(wl_touch: ptr wl_touch): uint32 {.inline.} =
-  wl_proxy_get_version(cast[ptr wl_proxy](wl_touch))
+  cast[ptr wl_proxy](wl_touch).get_version()
 proc destroy*(wl_touch: ptr wl_touch) {.inline.} =
-  wl_proxy_destroy(cast[ptr wl_proxy](wl_touch))
+  destroy cast[ptr wl_proxy](wl_touch)
 proc release*(wl_touch: ptr wl_touch) {.inline.} =
   ## release the touch object
-  wl_proxy_marshal_flags(cast[ptr wl_proxy](wl_touch), wl_touch_request_release.ord, nil, wl_proxy_get_version(cast[ptr wl_proxy](wl_touch)), WL_MARSHAL_FLAG_DESTROY)
+  cast[ptr wl_proxy](wl_touch).marshal_flags(wl_touch_request_release.ord, nil, cast[ptr wl_proxy](wl_touch).get_version(), WL_MARSHAL_FLAG_DESTROY)
 type WlOutputListener* = object
   geometry*: proc(
     data: pointer;
@@ -1526,53 +1526,53 @@ type WlOutputListener* = object
     description: cstring;
   ) {.nimcall.}
 proc add_listener*(wl_output: ptr wl_output; listener: ptr WlOutputListener; data: pointer): int {.inline.} =
-  wl_proxy_add_listener(cast[ptr wl_proxy](wl_output), listener, data)
+  cast[ptr wl_proxy](wl_output).add_listener(listener, data)
 
 proc set_user_data*(wl_output: ptr wl_output; user_data: pointer) {.inline.} =
-  wl_proxy_set_user_data(cast[ptr wl_proxy](wl_output), user_data)
+  cast[ptr wl_proxy](wl_output).set_user_data(user_data)
 proc get_user_data*(wl_output: ptr wl_output): pointer {.inline.} =
-  wl_proxy_get_user_data(cast[ptr wl_proxy](wl_output))
+  cast[ptr wl_proxy](wl_output).get_user_data()
 proc get_version*(wl_output: ptr wl_output): uint32 {.inline.} =
-  wl_proxy_get_version(cast[ptr wl_proxy](wl_output))
+  cast[ptr wl_proxy](wl_output).get_version()
 proc destroy*(wl_output: ptr wl_output) {.inline.} =
-  wl_proxy_destroy(cast[ptr wl_proxy](wl_output))
+  destroy cast[ptr wl_proxy](wl_output)
 proc release*(wl_output: ptr wl_output) {.inline.} =
   ## release the output object
   ## 
   ## Using this request a client can tell the server that it is not going to
   ## 	use the output object anymore.
   ## 
-  wl_proxy_marshal_flags(cast[ptr wl_proxy](wl_output), wl_output_request_release.ord, nil, wl_proxy_get_version(cast[ptr wl_proxy](wl_output)), WL_MARSHAL_FLAG_DESTROY)
+  cast[ptr wl_proxy](wl_output).marshal_flags(wl_output_request_release.ord, nil, cast[ptr wl_proxy](wl_output).get_version(), WL_MARSHAL_FLAG_DESTROY)
 proc set_user_data*(wl_region: ptr wl_region; user_data: pointer) {.inline.} =
-  wl_proxy_set_user_data(cast[ptr wl_proxy](wl_region), user_data)
+  cast[ptr wl_proxy](wl_region).set_user_data(user_data)
 proc get_user_data*(wl_region: ptr wl_region): pointer {.inline.} =
-  wl_proxy_get_user_data(cast[ptr wl_proxy](wl_region))
+  cast[ptr wl_proxy](wl_region).get_user_data()
 proc get_version*(wl_region: ptr wl_region): uint32 {.inline.} =
-  wl_proxy_get_version(cast[ptr wl_proxy](wl_region))
+  cast[ptr wl_proxy](wl_region).get_version()
 proc destroy*(wl_region: ptr wl_region) {.inline.} =
   ## destroy region
   ## 
   ## Destroy the region.  This will invalidate the object ID.
   ## 
-  wl_proxy_marshal_flags(cast[ptr wl_proxy](wl_region), wl_region_request_destroy.ord, nil, wl_proxy_get_version(cast[ptr wl_proxy](wl_region)), WL_MARSHAL_FLAG_DESTROY)
+  cast[ptr wl_proxy](wl_region).marshal_flags(wl_region_request_destroy.ord, nil, cast[ptr wl_proxy](wl_region).get_version(), WL_MARSHAL_FLAG_DESTROY)
 proc add*(wl_region: ptr wl_region; x: int32; y: int32; width: int32; height: int32) {.inline.} =
   ## add rectangle to region
   ## 
   ## Add the specified rectangle to the region.
   ## 
-  wl_proxy_marshal_flags(cast[ptr wl_proxy](wl_region), wl_region_request_add.ord, nil, wl_proxy_get_version(cast[ptr wl_proxy](wl_region)), 0, x, y, width, height)
+  cast[ptr wl_proxy](wl_region).marshal_flags(wl_region_request_add.ord, nil, cast[ptr wl_proxy](wl_region).get_version(), 0, x, y, width, height)
 proc subtract*(wl_region: ptr wl_region; x: int32; y: int32; width: int32; height: int32) {.inline.} =
   ## subtract rectangle from region
   ## 
   ## Subtract the specified rectangle from the region.
   ## 
-  wl_proxy_marshal_flags(cast[ptr wl_proxy](wl_region), wl_region_request_subtract.ord, nil, wl_proxy_get_version(cast[ptr wl_proxy](wl_region)), 0, x, y, width, height)
+  cast[ptr wl_proxy](wl_region).marshal_flags(wl_region_request_subtract.ord, nil, cast[ptr wl_proxy](wl_region).get_version(), 0, x, y, width, height)
 proc set_user_data*(wl_subcompositor: ptr wl_subcompositor; user_data: pointer) {.inline.} =
-  wl_proxy_set_user_data(cast[ptr wl_proxy](wl_subcompositor), user_data)
+  cast[ptr wl_proxy](wl_subcompositor).set_user_data(user_data)
 proc get_user_data*(wl_subcompositor: ptr wl_subcompositor): pointer {.inline.} =
-  wl_proxy_get_user_data(cast[ptr wl_proxy](wl_subcompositor))
+  cast[ptr wl_proxy](wl_subcompositor).get_user_data()
 proc get_version*(wl_subcompositor: ptr wl_subcompositor): uint32 {.inline.} =
-  wl_proxy_get_version(cast[ptr wl_proxy](wl_subcompositor))
+  cast[ptr wl_proxy](wl_subcompositor).get_version()
 proc destroy*(wl_subcompositor: ptr wl_subcompositor) {.inline.} =
   ## unbind from the subcompositor interface
   ## 
@@ -1580,7 +1580,7 @@ proc destroy*(wl_subcompositor: ptr wl_subcompositor) {.inline.} =
   ## 	protocol object anymore. This does not affect any other
   ## 	objects, wl_subsurface objects included.
   ## 
-  wl_proxy_marshal_flags(cast[ptr wl_proxy](wl_subcompositor), wl_subcompositor_request_destroy.ord, nil, wl_proxy_get_version(cast[ptr wl_proxy](wl_subcompositor)), WL_MARSHAL_FLAG_DESTROY)
+  cast[ptr wl_proxy](wl_subcompositor).marshal_flags(wl_subcompositor_request_destroy.ord, nil, cast[ptr wl_proxy](wl_subcompositor).get_version(), WL_MARSHAL_FLAG_DESTROY)
 proc get_subsurface*(wl_subcompositor: ptr wl_subcompositor; surface: ptr wl_surface; parent: ptr wl_surface): ptr wl_subsurface {.inline.} =
   ## give a surface the role sub-surface
   ## 
@@ -1604,13 +1604,13 @@ proc get_subsurface*(wl_subcompositor: ptr wl_subcompositor; surface: ptr wl_sur
   ## 	This request modifies the behaviour of wl_surface.commit request on
   ## 	the sub-surface, see the documentation on wl_subsurface interface.
   ## 
-  cast[ptr wl_subsurface](wl_proxy_marshal_flags(cast[ptr wl_proxy](wl_subcompositor), wl_subcompositor_request_get_subsurface.ord, addr wl_subsurface_interface, wl_proxy_get_version(cast[ptr wl_proxy](wl_subcompositor)), 0, nil, surface, parent))
+  cast[ptr wl_subsurface](cast[ptr wl_proxy](wl_subcompositor).marshal_flags(wl_subcompositor_request_get_subsurface.ord, addr wl_subsurface_interface, cast[ptr wl_proxy](wl_subcompositor).get_version(), 0, nil, surface, parent))
 proc set_user_data*(wl_subsurface: ptr wl_subsurface; user_data: pointer) {.inline.} =
-  wl_proxy_set_user_data(cast[ptr wl_proxy](wl_subsurface), user_data)
+  cast[ptr wl_proxy](wl_subsurface).set_user_data(user_data)
 proc get_user_data*(wl_subsurface: ptr wl_subsurface): pointer {.inline.} =
-  wl_proxy_get_user_data(cast[ptr wl_proxy](wl_subsurface))
+  cast[ptr wl_proxy](wl_subsurface).get_user_data()
 proc get_version*(wl_subsurface: ptr wl_subsurface): uint32 {.inline.} =
-  wl_proxy_get_version(cast[ptr wl_proxy](wl_subsurface))
+  cast[ptr wl_proxy](wl_subsurface).get_version()
 proc destroy*(wl_subsurface: ptr wl_subsurface) {.inline.} =
   ## remove sub-surface interface
   ## 
@@ -1619,7 +1619,7 @@ proc destroy*(wl_subsurface: ptr wl_subsurface) {.inline.} =
   ## 	wl_subcompositor.get_subsurface request. The wl_surface's association
   ## 	to the parent is deleted. The wl_surface is unmapped immediately.
   ## 
-  wl_proxy_marshal_flags(cast[ptr wl_proxy](wl_subsurface), wl_subsurface_request_destroy.ord, nil, wl_proxy_get_version(cast[ptr wl_proxy](wl_subsurface)), WL_MARSHAL_FLAG_DESTROY)
+  cast[ptr wl_proxy](wl_subsurface).marshal_flags(wl_subsurface_request_destroy.ord, nil, cast[ptr wl_proxy](wl_subsurface).get_version(), WL_MARSHAL_FLAG_DESTROY)
 proc set_position*(wl_subsurface: ptr wl_subsurface; x: int32; y: int32) {.inline.} =
   ## reposition the sub-surface
   ## 
@@ -1638,7 +1638,7 @@ proc set_position*(wl_subsurface: ptr wl_subsurface; x: int32; y: int32) {.inlin
   ## 
   ## 	The initial position is 0, 0.
   ## 
-  wl_proxy_marshal_flags(cast[ptr wl_proxy](wl_subsurface), wl_subsurface_request_set_position.ord, nil, wl_proxy_get_version(cast[ptr wl_proxy](wl_subsurface)), 0, x, y)
+  cast[ptr wl_proxy](wl_subsurface).marshal_flags(wl_subsurface_request_set_position.ord, nil, cast[ptr wl_proxy](wl_subsurface).get_version(), 0, x, y)
 proc place_above*(wl_subsurface: ptr wl_subsurface; sibling: ptr wl_surface) {.inline.} =
   ## restack the sub-surface
   ## 
@@ -1656,14 +1656,14 @@ proc place_above*(wl_subsurface: ptr wl_subsurface; sibling: ptr wl_surface) {.i
   ## 	A new sub-surface is initially added as the top-most in the stack
   ## 	of its siblings and parent.
   ## 
-  wl_proxy_marshal_flags(cast[ptr wl_proxy](wl_subsurface), wl_subsurface_request_place_above.ord, nil, wl_proxy_get_version(cast[ptr wl_proxy](wl_subsurface)), 0, sibling)
+  cast[ptr wl_proxy](wl_subsurface).marshal_flags(wl_subsurface_request_place_above.ord, nil, cast[ptr wl_proxy](wl_subsurface).get_version(), 0, sibling)
 proc place_below*(wl_subsurface: ptr wl_subsurface; sibling: ptr wl_surface) {.inline.} =
   ## restack the sub-surface
   ## 
   ## The sub-surface is placed just below the reference surface.
   ## 	See wl_subsurface.place_above.
   ## 
-  wl_proxy_marshal_flags(cast[ptr wl_proxy](wl_subsurface), wl_subsurface_request_place_below.ord, nil, wl_proxy_get_version(cast[ptr wl_proxy](wl_subsurface)), 0, sibling)
+  cast[ptr wl_proxy](wl_subsurface).marshal_flags(wl_subsurface_request_place_below.ord, nil, cast[ptr wl_proxy](wl_subsurface).get_version(), 0, sibling)
 proc set_sync*(wl_subsurface: ptr wl_subsurface) {.inline.} =
   ## set sub-surface to synchronized mode
   ## 
@@ -1681,7 +1681,7 @@ proc set_sync*(wl_subsurface: ptr wl_subsurface) {.inline.} =
   ## 
   ## 	See wl_subsurface for the recursive effect of this mode.
   ## 
-  wl_proxy_marshal_flags(cast[ptr wl_proxy](wl_subsurface), wl_subsurface_request_set_sync.ord, nil, wl_proxy_get_version(cast[ptr wl_proxy](wl_subsurface)), 0)
+  cast[ptr wl_proxy](wl_subsurface).marshal_flags(wl_subsurface_request_set_sync.ord, nil, cast[ptr wl_proxy](wl_subsurface).get_version(), 0)
 proc set_desync*(wl_subsurface: ptr wl_subsurface) {.inline.} =
   ## set sub-surface to desynchronized mode
   ## 
@@ -1705,4 +1705,4 @@ proc set_desync*(wl_subsurface: ptr wl_subsurface) {.inline.} =
   ## 	If a surface's parent surface behaves as desynchronized, then
   ## 	the cached state is applied on set_desync.
   ## 
-  wl_proxy_marshal_flags(cast[ptr wl_proxy](wl_subsurface), wl_subsurface_request_set_desync.ord, nil, wl_proxy_get_version(cast[ptr wl_proxy](wl_subsurface)), 0)
+  cast[ptr wl_proxy](wl_subsurface).marshal_flags(wl_subsurface_request_set_desync.ord, nil, cast[ptr wl_proxy](wl_subsurface).get_version(), 0)
