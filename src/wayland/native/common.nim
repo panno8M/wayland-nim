@@ -106,16 +106,16 @@ func insert_list*(list: var List; other: var List) = insert_list(addr(list), add
 func insert_list*(list: ptr List; other: var List) = insert_list(list, addr(other))
 func insert_list*(list: var List; other: ptr List) = insert_list(addr(list), other)
 
-template wl_container_of*(`ptr`, sample, member: untyped): untyped =
-  cast[typeof sample](cast[int](`ptr`) - offsetof(typeof(sample[]), member))
+template wl_container_of*[T](`ptr`: pointer; sample: ptr T; member: untyped): ptr T =
+  cast[ptr T](cast[int](`ptr`) - T.offsetof(member))
 
-template wl_list_for_each*(pos, head, member; body): untyped =
+template wl_list_for_each*(pos: pointer; head: ptr List; member; body): untyped =
   pos = wl_container_of(head.next, pos, member)
   while pos.member.addr != head:
     body
     pos = wl_container_of(pos.member.next, pos, member)
 
-template wl_list_for_each_safe*(pos, tmp, head, member; body): untyped =
+template wl_list_for_each_safe*(pos, tmp: pointer; head: ptr List, member; body): untyped =
   pos = wl_container_of(head.next, pos, member)
   tmp = wl_container_of(pos.member.next, tmp, member)
   while pos.member.addr != head:
@@ -123,7 +123,7 @@ template wl_list_for_each_safe*(pos, tmp, head, member; body): untyped =
     pos = tmp
     tmp = wl_container_of(pos.member.next, tmp, member)
 
-template wl_list_for_each_reverse*(pos, head, member; body): untyped =
+template wl_list_for_each_reverse*(pos: pointer, head: ptr List, member; body): untyped =
   pos = wl_container_of(head.prev, pos, member)
   while pos.member.addr != head:
     body
