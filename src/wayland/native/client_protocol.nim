@@ -62,29 +62,29 @@ export protocol_code
 ## SOFTWARE.
 ## 
 
-type WlDisplayListener* = object
+type DisplayListener* = object
   error*: proc(
     data: pointer;
-    wl_display: ptr wl_display;
-    object_id: pointer;
+    display: ptr Display;
+    objectId: pointer;
     code: uint32;
     message: cstring;
   ) {.nimcall.}
-  delete_id*: proc(
+  deleteId*: proc(
     data: pointer;
-    wl_display: ptr wl_display;
+    display: ptr Display;
     id: uint32;
   ) {.nimcall.}
-proc add_listener*(wl_display: ptr wl_display; listener: ptr WlDisplayListener; data: pointer): int {.inline.} =
-  cast[ptr wl_proxy](wl_display).add_listener(listener, data)
+proc addListener*(display: ptr Display; listener: ptr DisplayListener; data: pointer): int {.inline.} =
+  cast[ptr Proxy](display).add_listener(listener, data)
 
-proc set_user_data*(wl_display: ptr wl_display; user_data: pointer) {.inline.} =
-  cast[ptr wl_proxy](wl_display).set_user_data(user_data)
-proc get_user_data*(wl_display: ptr wl_display): pointer {.inline.} =
-  cast[ptr wl_proxy](wl_display).get_user_data()
-proc get_version*(wl_display: ptr wl_display): uint32 {.inline.} =
-  cast[ptr wl_proxy](wl_display).get_version()
-proc sync*(wl_display: ptr wl_display): ptr wl_callback {.inline.} =
+proc setUserData*(display: ptr Display; userData: pointer) {.inline.} =
+  cast[ptr Proxy](display).set_user_data(user_data)
+proc getUserData*(display: ptr Display): pointer {.inline.} =
+  cast[ptr Proxy](display).get_user_data()
+proc getVersion*(display: ptr Display): uint32 {.inline.} =
+  cast[ptr Proxy](display).get_version()
+proc sync*(display: ptr Display): ptr Callback {.inline.} =
   ## asynchronous roundtrip
   ## 
   ## The sync request asks the server to emit the 'done' event
@@ -99,8 +99,8 @@ proc sync*(wl_display: ptr wl_display): ptr wl_callback {.inline.} =
   ## 
   ## 	The callback_data passed in the callback is undefined and should be ignored.
   ## 
-  cast[ptr wl_callback](cast[ptr wl_proxy](wl_display).marshal_flags(wl_display_request_sync.ord, addr wl_callback_interface, cast[ptr wl_proxy](wl_display).get_version(), 0, nil))
-proc get_registry*(wl_display: ptr wl_display): ptr wl_registry {.inline.} =
+  cast[ptr Callback](cast[ptr Proxy](display).marshal_flags(DisplayRequest_sync.ord, addr wl_callback_interface, cast[ptr Proxy](display).get_version(), 0, nil))
+proc getRegistry*(display: ptr Display): ptr Registry {.inline.} =
   ## get global registry object
   ## 
   ## This request creates a registry object that allows the client
@@ -113,82 +113,82 @@ proc get_registry*(wl_display: ptr wl_display): ptr wl_registry {.inline.} =
   ## 	Therefore, clients should invoke get_registry as infrequently as
   ## 	possible to avoid wasting memory.
   ## 
-  cast[ptr wl_registry](cast[ptr wl_proxy](wl_display).marshal_flags(wl_display_request_get_registry.ord, addr wl_registry_interface, cast[ptr wl_proxy](wl_display).get_version(), 0, nil))
-type WlRegistryListener* = object
+  cast[ptr Registry](cast[ptr Proxy](display).marshal_flags(DisplayRequest_get_registry.ord, addr wl_registry_interface, cast[ptr Proxy](display).get_version(), 0, nil))
+type RegistryListener* = object
   global*: proc(
     data: pointer;
-    wl_registry: ptr wl_registry;
+    registry: ptr Registry;
     name: uint32;
     `interface`: cstring;
     version: uint32;
   ) {.nimcall.}
-  global_remove*: proc(
+  globalRemove*: proc(
     data: pointer;
-    wl_registry: ptr wl_registry;
+    registry: ptr Registry;
     name: uint32;
   ) {.nimcall.}
-proc add_listener*(wl_registry: ptr wl_registry; listener: ptr WlRegistryListener; data: pointer): int {.inline.} =
-  cast[ptr wl_proxy](wl_registry).add_listener(listener, data)
+proc addListener*(registry: ptr Registry; listener: ptr RegistryListener; data: pointer): int {.inline.} =
+  cast[ptr Proxy](registry).add_listener(listener, data)
 
-proc set_user_data*(wl_registry: ptr wl_registry; user_data: pointer) {.inline.} =
-  cast[ptr wl_proxy](wl_registry).set_user_data(user_data)
-proc get_user_data*(wl_registry: ptr wl_registry): pointer {.inline.} =
-  cast[ptr wl_proxy](wl_registry).get_user_data()
-proc get_version*(wl_registry: ptr wl_registry): uint32 {.inline.} =
-  cast[ptr wl_proxy](wl_registry).get_version()
-proc destroy*(wl_registry: ptr wl_registry) {.inline.} =
-  destroy cast[ptr wl_proxy](wl_registry)
-proc `bind`*(wl_registry: ptr wl_registry; name: uint32; `interface`: ptr wl_interface; version: uint32): pointer {.inline.} =
+proc setUserData*(registry: ptr Registry; userData: pointer) {.inline.} =
+  cast[ptr Proxy](registry).set_user_data(user_data)
+proc getUserData*(registry: ptr Registry): pointer {.inline.} =
+  cast[ptr Proxy](registry).get_user_data()
+proc getVersion*(registry: ptr Registry): uint32 {.inline.} =
+  cast[ptr Proxy](registry).get_version()
+proc destroy*(registry: ptr Registry) {.inline.} =
+  destroy cast[ptr Proxy](registry)
+proc `bind`*(registry: ptr Registry; name: uint32; `interface`: ptr Interface; version: uint32): pointer {.inline.} =
   ## bind an object to the display
   ## 
   ## Binds a new, client-created object to the server using the
   ## 	specified name as the identifier.
   ## 
-  cast[ptr wl_proxy](wl_registry).marshal_flags(wl_registry_request_bind.ord, `interface`, version, 0, name, `interface`.name, version, nil)
-type WlCallbackListener* = object
+  cast[ptr Proxy](registry).marshal_flags(RegistryRequest_bind.ord, `interface`, version, 0, name, `interface`.name, version, nil)
+type CallbackListener* = object
   done*: proc(
     data: pointer;
-    wl_callback: ptr wl_callback;
-    callback_data: uint32;
+    callback: ptr Callback;
+    callbackData: uint32;
   ) {.nimcall.}
-proc add_listener*(wl_callback: ptr wl_callback; listener: ptr WlCallbackListener; data: pointer): int {.inline.} =
-  cast[ptr wl_proxy](wl_callback).add_listener(listener, data)
+proc addListener*(callback: ptr Callback; listener: ptr CallbackListener; data: pointer): int {.inline.} =
+  cast[ptr Proxy](callback).add_listener(listener, data)
 
-proc set_user_data*(wl_callback: ptr wl_callback; user_data: pointer) {.inline.} =
-  cast[ptr wl_proxy](wl_callback).set_user_data(user_data)
-proc get_user_data*(wl_callback: ptr wl_callback): pointer {.inline.} =
-  cast[ptr wl_proxy](wl_callback).get_user_data()
-proc get_version*(wl_callback: ptr wl_callback): uint32 {.inline.} =
-  cast[ptr wl_proxy](wl_callback).get_version()
-proc destroy*(wl_callback: ptr wl_callback) {.inline.} =
-  destroy cast[ptr wl_proxy](wl_callback)
-proc set_user_data*(wl_compositor: ptr wl_compositor; user_data: pointer) {.inline.} =
-  cast[ptr wl_proxy](wl_compositor).set_user_data(user_data)
-proc get_user_data*(wl_compositor: ptr wl_compositor): pointer {.inline.} =
-  cast[ptr wl_proxy](wl_compositor).get_user_data()
-proc get_version*(wl_compositor: ptr wl_compositor): uint32 {.inline.} =
-  cast[ptr wl_proxy](wl_compositor).get_version()
-proc destroy*(wl_compositor: ptr wl_compositor) {.inline.} =
-  destroy cast[ptr wl_proxy](wl_compositor)
-proc create_surface*(wl_compositor: ptr wl_compositor): ptr wl_surface {.inline.} =
+proc setUserData*(callback: ptr Callback; userData: pointer) {.inline.} =
+  cast[ptr Proxy](callback).set_user_data(user_data)
+proc getUserData*(callback: ptr Callback): pointer {.inline.} =
+  cast[ptr Proxy](callback).get_user_data()
+proc getVersion*(callback: ptr Callback): uint32 {.inline.} =
+  cast[ptr Proxy](callback).get_version()
+proc destroy*(callback: ptr Callback) {.inline.} =
+  destroy cast[ptr Proxy](callback)
+proc setUserData*(compositor: ptr Compositor; userData: pointer) {.inline.} =
+  cast[ptr Proxy](compositor).set_user_data(user_data)
+proc getUserData*(compositor: ptr Compositor): pointer {.inline.} =
+  cast[ptr Proxy](compositor).get_user_data()
+proc getVersion*(compositor: ptr Compositor): uint32 {.inline.} =
+  cast[ptr Proxy](compositor).get_version()
+proc destroy*(compositor: ptr Compositor) {.inline.} =
+  destroy cast[ptr Proxy](compositor)
+proc createSurface*(compositor: ptr Compositor): ptr Surface {.inline.} =
   ## create new surface
   ## 
   ## Ask the compositor to create a new surface.
   ## 
-  cast[ptr wl_surface](cast[ptr wl_proxy](wl_compositor).marshal_flags(wl_compositor_request_create_surface.ord, addr wl_surface_interface, cast[ptr wl_proxy](wl_compositor).get_version(), 0, nil))
-proc create_region*(wl_compositor: ptr wl_compositor): ptr wl_region {.inline.} =
+  cast[ptr Surface](cast[ptr Proxy](compositor).marshal_flags(CompositorRequest_create_surface.ord, addr wl_surface_interface, cast[ptr Proxy](compositor).get_version(), 0, nil))
+proc createRegion*(compositor: ptr Compositor): ptr Region {.inline.} =
   ## create new region
   ## 
   ## Ask the compositor to create a new region.
   ## 
-  cast[ptr wl_region](cast[ptr wl_proxy](wl_compositor).marshal_flags(wl_compositor_request_create_region.ord, addr wl_region_interface, cast[ptr wl_proxy](wl_compositor).get_version(), 0, nil))
-proc set_user_data*(wl_shm_pool: ptr wl_shm_pool; user_data: pointer) {.inline.} =
-  cast[ptr wl_proxy](wl_shm_pool).set_user_data(user_data)
-proc get_user_data*(wl_shm_pool: ptr wl_shm_pool): pointer {.inline.} =
-  cast[ptr wl_proxy](wl_shm_pool).get_user_data()
-proc get_version*(wl_shm_pool: ptr wl_shm_pool): uint32 {.inline.} =
-  cast[ptr wl_proxy](wl_shm_pool).get_version()
-proc create_buffer*(wl_shm_pool: ptr wl_shm_pool; offset: int32; width: int32; height: int32; stride: int32; format: uint32): ptr wl_buffer {.inline.} =
+  cast[ptr Region](cast[ptr Proxy](compositor).marshal_flags(CompositorRequest_create_region.ord, addr wl_region_interface, cast[ptr Proxy](compositor).get_version(), 0, nil))
+proc setUserData*(shmPool: ptr ShmPool; userData: pointer) {.inline.} =
+  cast[ptr Proxy](shmPool).set_user_data(user_data)
+proc getUserData*(shmPool: ptr ShmPool): pointer {.inline.} =
+  cast[ptr Proxy](shmPool).get_user_data()
+proc getVersion*(shmPool: ptr ShmPool): uint32 {.inline.} =
+  cast[ptr Proxy](shmPool).get_version()
+proc createBuffer*(shmPool: ptr ShmPool; offset: int32; width: int32; height: int32; stride: int32; format: uint32): ptr Buffer {.inline.} =
   ## create a buffer from the pool
   ## 
   ## Create a wl_buffer object from the pool.
@@ -203,8 +203,8 @@ proc create_buffer*(wl_shm_pool: ptr wl_shm_pool; offset: int32; width: int32; h
   ## 	so it is valid to destroy the pool immediately after creating
   ## 	a buffer from it.
   ## 
-  cast[ptr wl_buffer](cast[ptr wl_proxy](wl_shm_pool).marshal_flags(wl_shm_pool_request_create_buffer.ord, addr wl_buffer_interface, cast[ptr wl_proxy](wl_shm_pool).get_version(), 0, nil, offset, width, height, stride, format))
-proc destroy*(wl_shm_pool: ptr wl_shm_pool) {.inline.} =
+  cast[ptr Buffer](cast[ptr Proxy](shmPool).marshal_flags(ShmPoolRequest_create_buffer.ord, addr wl_buffer_interface, cast[ptr Proxy](shmPool).get_version(), 0, nil, offset, width, height, stride, format))
+proc destroy*(shmPool: ptr ShmPool) {.inline.} =
   ## destroy the pool
   ## 
   ## Destroy the shared memory pool.
@@ -213,8 +213,8 @@ proc destroy*(wl_shm_pool: ptr wl_shm_pool) {.inline.} =
   ## 	buffers that have been created from this pool
   ## 	are gone.
   ## 
-  cast[ptr wl_proxy](wl_shm_pool).marshal_flags(wl_shm_pool_request_destroy.ord, nil, cast[ptr wl_proxy](wl_shm_pool).get_version(), WL_MARSHAL_FLAG_DESTROY)
-proc resize*(wl_shm_pool: ptr wl_shm_pool; size: int32) {.inline.} =
+  cast[ptr Proxy](shmPool).marshal_flags(ShmPoolRequest_destroy.ord, nil, cast[ptr Proxy](shmPool).get_version(), WL_MARSHAL_FLAG_DESTROY)
+proc resize*(shmPool: ptr ShmPool; size: int32) {.inline.} =
   ## change the size of the pool mapping
   ## 
   ## This request will cause the server to remap the backing memory
@@ -228,25 +228,25 @@ proc resize*(wl_shm_pool: ptr wl_shm_pool; size: int32) {.inline.} =
   ## 	responsibility to ensure that the file is at least as big as
   ## 	the new pool size.
   ## 
-  cast[ptr wl_proxy](wl_shm_pool).marshal_flags(wl_shm_pool_request_resize.ord, nil, cast[ptr wl_proxy](wl_shm_pool).get_version(), 0, size)
-type WlShmListener* = object
+  cast[ptr Proxy](shmPool).marshal_flags(ShmPoolRequest_resize.ord, nil, cast[ptr Proxy](shmPool).get_version(), 0, size)
+type ShmListener* = object
   format*: proc(
     data: pointer;
-    wl_shm: ptr wl_shm;
+    shm: ptr Shm;
     format: uint32;
   ) {.nimcall.}
-proc add_listener*(wl_shm: ptr wl_shm; listener: ptr WlShmListener; data: pointer): int {.inline.} =
-  cast[ptr wl_proxy](wl_shm).add_listener(listener, data)
+proc addListener*(shm: ptr Shm; listener: ptr ShmListener; data: pointer): int {.inline.} =
+  cast[ptr Proxy](shm).add_listener(listener, data)
 
-proc set_user_data*(wl_shm: ptr wl_shm; user_data: pointer) {.inline.} =
-  cast[ptr wl_proxy](wl_shm).set_user_data(user_data)
-proc get_user_data*(wl_shm: ptr wl_shm): pointer {.inline.} =
-  cast[ptr wl_proxy](wl_shm).get_user_data()
-proc get_version*(wl_shm: ptr wl_shm): uint32 {.inline.} =
-  cast[ptr wl_proxy](wl_shm).get_version()
-proc destroy*(wl_shm: ptr wl_shm) {.inline.} =
-  destroy cast[ptr wl_proxy](wl_shm)
-proc create_pool*(wl_shm: ptr wl_shm; fd: int32; size: int32): ptr wl_shm_pool {.inline.} =
+proc setUserData*(shm: ptr Shm; userData: pointer) {.inline.} =
+  cast[ptr Proxy](shm).set_user_data(user_data)
+proc getUserData*(shm: ptr Shm): pointer {.inline.} =
+  cast[ptr Proxy](shm).get_user_data()
+proc getVersion*(shm: ptr Shm): uint32 {.inline.} =
+  cast[ptr Proxy](shm).get_version()
+proc destroy*(shm: ptr Shm) {.inline.} =
+  destroy cast[ptr Proxy](shm)
+proc createPool*(shm: ptr Shm; fd: int32; size: int32): ptr ShmPool {.inline.} =
   ## create a shm pool
   ## 
   ## Create a new wl_shm_pool object.
@@ -255,8 +255,8 @@ proc create_pool*(wl_shm: ptr wl_shm; fd: int32; size: int32): ptr wl_shm_pool {
   ## 	objects.  The server will mmap size bytes of the passed file
   ## 	descriptor, to use as backing memory for the pool.
   ## 
-  cast[ptr wl_shm_pool](cast[ptr wl_proxy](wl_shm).marshal_flags(wl_shm_request_create_pool.ord, addr wl_shm_pool_interface, cast[ptr wl_proxy](wl_shm).get_version(), 0, nil, fd, size))
-proc release*(wl_shm: ptr wl_shm) {.inline.} =
+  cast[ptr ShmPool](cast[ptr Proxy](shm).marshal_flags(ShmRequest_create_pool.ord, addr wl_shm_pool_interface, cast[ptr Proxy](shm).get_version(), 0, nil, fd, size))
+proc release*(shm: ptr Shm) {.inline.} =
   ## release the shm object
   ## 
   ## Using this request a client can tell the server that it is not going to
@@ -264,22 +264,22 @@ proc release*(wl_shm: ptr wl_shm) {.inline.} =
   ## 
   ## 	Objects created via this interface remain unaffected.
   ## 
-  cast[ptr wl_proxy](wl_shm).marshal_flags(wl_shm_request_release.ord, nil, cast[ptr wl_proxy](wl_shm).get_version(), WL_MARSHAL_FLAG_DESTROY)
-type WlBufferListener* = object
+  cast[ptr Proxy](shm).marshal_flags(ShmRequest_release.ord, nil, cast[ptr Proxy](shm).get_version(), WL_MARSHAL_FLAG_DESTROY)
+type BufferListener* = object
   release*: proc(
     data: pointer;
-    wl_buffer: ptr wl_buffer;
+    buffer: ptr Buffer;
   ) {.nimcall.}
-proc add_listener*(wl_buffer: ptr wl_buffer; listener: ptr WlBufferListener; data: pointer): int {.inline.} =
-  cast[ptr wl_proxy](wl_buffer).add_listener(listener, data)
+proc addListener*(buffer: ptr Buffer; listener: ptr BufferListener; data: pointer): int {.inline.} =
+  cast[ptr Proxy](buffer).add_listener(listener, data)
 
-proc set_user_data*(wl_buffer: ptr wl_buffer; user_data: pointer) {.inline.} =
-  cast[ptr wl_proxy](wl_buffer).set_user_data(user_data)
-proc get_user_data*(wl_buffer: ptr wl_buffer): pointer {.inline.} =
-  cast[ptr wl_proxy](wl_buffer).get_user_data()
-proc get_version*(wl_buffer: ptr wl_buffer): uint32 {.inline.} =
-  cast[ptr wl_proxy](wl_buffer).get_version()
-proc destroy*(wl_buffer: ptr wl_buffer) {.inline.} =
+proc setUserData*(buffer: ptr Buffer; userData: pointer) {.inline.} =
+  cast[ptr Proxy](buffer).set_user_data(user_data)
+proc getUserData*(buffer: ptr Buffer): pointer {.inline.} =
+  cast[ptr Proxy](buffer).get_user_data()
+proc getVersion*(buffer: ptr Buffer): uint32 {.inline.} =
+  cast[ptr Proxy](buffer).get_version()
+proc destroy*(buffer: ptr Buffer) {.inline.} =
   ## destroy a buffer
   ## 
   ## Destroy a buffer. If and how you need to release the backing
@@ -287,33 +287,33 @@ proc destroy*(wl_buffer: ptr wl_buffer) {.inline.} =
   ## 
   ## 	For possible side-effects to a surface, see wl_surface.attach.
   ## 
-  cast[ptr wl_proxy](wl_buffer).marshal_flags(wl_buffer_request_destroy.ord, nil, cast[ptr wl_proxy](wl_buffer).get_version(), WL_MARSHAL_FLAG_DESTROY)
-type WlDataOfferListener* = object
+  cast[ptr Proxy](buffer).marshal_flags(BufferRequest_destroy.ord, nil, cast[ptr Proxy](buffer).get_version(), WL_MARSHAL_FLAG_DESTROY)
+type DataOfferListener* = object
   offer*: proc(
     data: pointer;
-    wl_data_offer: ptr wl_data_offer;
-    mime_type: cstring;
+    dataOffer: ptr DataOffer;
+    mimeType: cstring;
   ) {.nimcall.}
-  source_actions*: proc(
+  sourceActions*: proc(
     data: pointer;
-    wl_data_offer: ptr wl_data_offer;
-    source_actions: uint32;
+    dataOffer: ptr DataOffer;
+    sourceActions: uint32;
   ) {.nimcall.}
   action*: proc(
     data: pointer;
-    wl_data_offer: ptr wl_data_offer;
-    dnd_action: uint32;
+    dataOffer: ptr DataOffer;
+    dndAction: uint32;
   ) {.nimcall.}
-proc add_listener*(wl_data_offer: ptr wl_data_offer; listener: ptr WlDataOfferListener; data: pointer): int {.inline.} =
-  cast[ptr wl_proxy](wl_data_offer).add_listener(listener, data)
+proc addListener*(dataOffer: ptr DataOffer; listener: ptr DataOfferListener; data: pointer): int {.inline.} =
+  cast[ptr Proxy](dataOffer).add_listener(listener, data)
 
-proc set_user_data*(wl_data_offer: ptr wl_data_offer; user_data: pointer) {.inline.} =
-  cast[ptr wl_proxy](wl_data_offer).set_user_data(user_data)
-proc get_user_data*(wl_data_offer: ptr wl_data_offer): pointer {.inline.} =
-  cast[ptr wl_proxy](wl_data_offer).get_user_data()
-proc get_version*(wl_data_offer: ptr wl_data_offer): uint32 {.inline.} =
-  cast[ptr wl_proxy](wl_data_offer).get_version()
-proc accept*(wl_data_offer: ptr wl_data_offer; serial: uint32; mime_type: cstring) {.inline.} =
+proc setUserData*(dataOffer: ptr DataOffer; userData: pointer) {.inline.} =
+  cast[ptr Proxy](dataOffer).set_user_data(user_data)
+proc getUserData*(dataOffer: ptr DataOffer): pointer {.inline.} =
+  cast[ptr Proxy](dataOffer).get_user_data()
+proc getVersion*(dataOffer: ptr DataOffer): uint32 {.inline.} =
+  cast[ptr Proxy](dataOffer).get_version()
+proc accept*(dataOffer: ptr DataOffer; serial: uint32; mimeType: cstring) {.inline.} =
   ## accept one of the offered mime types
   ## 
   ## Indicate that the client can accept the given mime type, or
@@ -331,8 +331,8 @@ proc accept*(wl_data_offer: ptr wl_data_offer; serial: uint32; mime_type: cstrin
   ## 	wl_data_source.cancelled. Clients may still use this event in
   ## 	conjunction with wl_data_source.action for feedback.
   ## 
-  cast[ptr wl_proxy](wl_data_offer).marshal_flags(wl_data_offer_request_accept.ord, nil, cast[ptr wl_proxy](wl_data_offer).get_version(), 0, serial, mime_type)
-proc receive*(wl_data_offer: ptr wl_data_offer; mime_type: cstring; fd: int32) {.inline.} =
+  cast[ptr Proxy](dataOffer).marshal_flags(DataOfferRequest_accept.ord, nil, cast[ptr Proxy](dataOffer).get_version(), 0, serial, mimeType)
+proc receive*(dataOffer: ptr DataOffer; mimeType: cstring; fd: int32) {.inline.} =
   ## request that the data is transferred
   ## 
   ## To transfer the offered data, the client issues this request
@@ -351,14 +351,14 @@ proc receive*(wl_data_offer: ptr wl_data_offer; mime_type: cstring; fd: int32) {
   ## 	clients may preemptively fetch data or examine it more closely to
   ## 	determine acceptance.
   ## 
-  cast[ptr wl_proxy](wl_data_offer).marshal_flags(wl_data_offer_request_receive.ord, nil, cast[ptr wl_proxy](wl_data_offer).get_version(), 0, mime_type, fd)
-proc destroy*(wl_data_offer: ptr wl_data_offer) {.inline.} =
+  cast[ptr Proxy](dataOffer).marshal_flags(DataOfferRequest_receive.ord, nil, cast[ptr Proxy](dataOffer).get_version(), 0, mimeType, fd)
+proc destroy*(dataOffer: ptr DataOffer) {.inline.} =
   ## destroy data offer
   ## 
   ## Destroy the data offer.
   ## 
-  cast[ptr wl_proxy](wl_data_offer).marshal_flags(wl_data_offer_request_destroy.ord, nil, cast[ptr wl_proxy](wl_data_offer).get_version(), WL_MARSHAL_FLAG_DESTROY)
-proc finish*(wl_data_offer: ptr wl_data_offer) {.inline.} =
+  cast[ptr Proxy](dataOffer).marshal_flags(DataOfferRequest_destroy.ord, nil, cast[ptr Proxy](dataOffer).get_version(), WL_MARSHAL_FLAG_DESTROY)
+proc finish*(dataOffer: ptr DataOffer) {.inline.} =
   ## the offer will no longer be used
   ## 
   ## Notifies the compositor that the drag destination successfully
@@ -376,8 +376,8 @@ proc finish*(wl_data_offer: ptr wl_data_offer) {.inline.} =
   ## 	If wl_data_offer.finish request is received for a non drag and drop
   ## 	operation, the invalid_finish protocol error is raised.
   ## 
-  cast[ptr wl_proxy](wl_data_offer).marshal_flags(wl_data_offer_request_finish.ord, nil, cast[ptr wl_proxy](wl_data_offer).get_version(), 0)
-proc set_actions*(wl_data_offer: ptr wl_data_offer; dnd_actions: uint32; preferred_action: uint32) {.inline.} =
+  cast[ptr Proxy](dataOffer).marshal_flags(DataOfferRequest_finish.ord, nil, cast[ptr Proxy](dataOffer).get_version(), 0)
+proc setActions*(dataOffer: ptr DataOffer; dndActions: uint32; preferredAction: uint32) {.inline.} =
   ## set the available/preferred drag-and-drop actions
   ## 
   ## Sets the actions that the destination side client supports for
@@ -412,60 +412,60 @@ proc set_actions*(wl_data_offer: ptr wl_data_offer; dnd_actions: uint32; preferr
   ## 	This request can only be made on drag-and-drop offers, a protocol error
   ## 	will be raised otherwise.
   ## 
-  cast[ptr wl_proxy](wl_data_offer).marshal_flags(wl_data_offer_request_set_actions.ord, nil, cast[ptr wl_proxy](wl_data_offer).get_version(), 0, dnd_actions, preferred_action)
-type WlDataSourceListener* = object
+  cast[ptr Proxy](dataOffer).marshal_flags(DataOfferRequest_set_actions.ord, nil, cast[ptr Proxy](dataOffer).get_version(), 0, dndActions, preferredAction)
+type DataSourceListener* = object
   target*: proc(
     data: pointer;
-    wl_data_source: ptr wl_data_source;
-    mime_type: cstring;
+    dataSource: ptr DataSource;
+    mimeType: cstring;
   ) {.nimcall.}
   send*: proc(
     data: pointer;
-    wl_data_source: ptr wl_data_source;
-    mime_type: cstring;
+    dataSource: ptr DataSource;
+    mimeType: cstring;
     fd: int32;
   ) {.nimcall.}
   cancelled*: proc(
     data: pointer;
-    wl_data_source: ptr wl_data_source;
+    dataSource: ptr DataSource;
   ) {.nimcall.}
-  dnd_drop_performed*: proc(
+  dndDropPerformed*: proc(
     data: pointer;
-    wl_data_source: ptr wl_data_source;
+    dataSource: ptr DataSource;
   ) {.nimcall.}
-  dnd_finished*: proc(
+  dndFinished*: proc(
     data: pointer;
-    wl_data_source: ptr wl_data_source;
+    dataSource: ptr DataSource;
   ) {.nimcall.}
   action*: proc(
     data: pointer;
-    wl_data_source: ptr wl_data_source;
-    dnd_action: uint32;
+    dataSource: ptr DataSource;
+    dndAction: uint32;
   ) {.nimcall.}
-proc add_listener*(wl_data_source: ptr wl_data_source; listener: ptr WlDataSourceListener; data: pointer): int {.inline.} =
-  cast[ptr wl_proxy](wl_data_source).add_listener(listener, data)
+proc addListener*(dataSource: ptr DataSource; listener: ptr DataSourceListener; data: pointer): int {.inline.} =
+  cast[ptr Proxy](dataSource).add_listener(listener, data)
 
-proc set_user_data*(wl_data_source: ptr wl_data_source; user_data: pointer) {.inline.} =
-  cast[ptr wl_proxy](wl_data_source).set_user_data(user_data)
-proc get_user_data*(wl_data_source: ptr wl_data_source): pointer {.inline.} =
-  cast[ptr wl_proxy](wl_data_source).get_user_data()
-proc get_version*(wl_data_source: ptr wl_data_source): uint32 {.inline.} =
-  cast[ptr wl_proxy](wl_data_source).get_version()
-proc offer*(wl_data_source: ptr wl_data_source; mime_type: cstring) {.inline.} =
+proc setUserData*(dataSource: ptr DataSource; userData: pointer) {.inline.} =
+  cast[ptr Proxy](dataSource).set_user_data(user_data)
+proc getUserData*(dataSource: ptr DataSource): pointer {.inline.} =
+  cast[ptr Proxy](dataSource).get_user_data()
+proc getVersion*(dataSource: ptr DataSource): uint32 {.inline.} =
+  cast[ptr Proxy](dataSource).get_version()
+proc offer*(dataSource: ptr DataSource; mimeType: cstring) {.inline.} =
   ## add an offered mime type
   ## 
   ## This request adds a mime type to the set of mime types
   ## 	advertised to targets.  Can be called several times to offer
   ## 	multiple types.
   ## 
-  cast[ptr wl_proxy](wl_data_source).marshal_flags(wl_data_source_request_offer.ord, nil, cast[ptr wl_proxy](wl_data_source).get_version(), 0, mime_type)
-proc destroy*(wl_data_source: ptr wl_data_source) {.inline.} =
+  cast[ptr Proxy](dataSource).marshal_flags(DataSourceRequest_offer.ord, nil, cast[ptr Proxy](dataSource).get_version(), 0, mimeType)
+proc destroy*(dataSource: ptr DataSource) {.inline.} =
   ## destroy the data source
   ## 
   ## Destroy the data source.
   ## 
-  cast[ptr wl_proxy](wl_data_source).marshal_flags(wl_data_source_request_destroy.ord, nil, cast[ptr wl_proxy](wl_data_source).get_version(), WL_MARSHAL_FLAG_DESTROY)
-proc set_actions*(wl_data_source: ptr wl_data_source; dnd_actions: uint32) {.inline.} =
+  cast[ptr Proxy](dataSource).marshal_flags(DataSourceRequest_destroy.ord, nil, cast[ptr Proxy](dataSource).get_version(), WL_MARSHAL_FLAG_DESTROY)
+proc setActions*(dataSource: ptr DataSource; dndActions: uint32) {.inline.} =
   ## set the available drag-and-drop actions
   ## 
   ## Sets the actions that the source side client supports for this
@@ -482,54 +482,54 @@ proc set_actions*(wl_data_source: ptr wl_data_source; dnd_actions: uint32) {.inl
   ## 	wl_data_device.start_drag. Attempting to use the source other than
   ## 	for drag-and-drop will raise a protocol error.
   ## 
-  cast[ptr wl_proxy](wl_data_source).marshal_flags(wl_data_source_request_set_actions.ord, nil, cast[ptr wl_proxy](wl_data_source).get_version(), 0, dnd_actions)
-type WlDataDeviceListener* = object
-  data_offer*: proc(
+  cast[ptr Proxy](dataSource).marshal_flags(DataSourceRequest_set_actions.ord, nil, cast[ptr Proxy](dataSource).get_version(), 0, dndActions)
+type DataDeviceListener* = object
+  dataOffer*: proc(
     data: pointer;
-    wl_data_device: ptr wl_data_device;
-    id: ptr wl_data_offer;
+    dataDevice: ptr DataDevice;
+    id: ptr DataOffer;
   ) {.nimcall.}
   enter*: proc(
     data: pointer;
-    wl_data_device: ptr wl_data_device;
+    dataDevice: ptr DataDevice;
     serial: uint32;
-    surface: ptr wl_surface;
-    x: wl_fixed_t;
-    y: wl_fixed_t;
-    id: ptr wl_data_offer;
+    surface: ptr Surface;
+    x: Fixed;
+    y: Fixed;
+    id: ptr DataOffer;
   ) {.nimcall.}
   leave*: proc(
     data: pointer;
-    wl_data_device: ptr wl_data_device;
+    dataDevice: ptr DataDevice;
   ) {.nimcall.}
   motion*: proc(
     data: pointer;
-    wl_data_device: ptr wl_data_device;
+    dataDevice: ptr DataDevice;
     time: uint32;
-    x: wl_fixed_t;
-    y: wl_fixed_t;
+    x: Fixed;
+    y: Fixed;
   ) {.nimcall.}
   drop*: proc(
     data: pointer;
-    wl_data_device: ptr wl_data_device;
+    dataDevice: ptr DataDevice;
   ) {.nimcall.}
   selection*: proc(
     data: pointer;
-    wl_data_device: ptr wl_data_device;
-    id: ptr wl_data_offer;
+    dataDevice: ptr DataDevice;
+    id: ptr DataOffer;
   ) {.nimcall.}
-proc add_listener*(wl_data_device: ptr wl_data_device; listener: ptr WlDataDeviceListener; data: pointer): int {.inline.} =
-  cast[ptr wl_proxy](wl_data_device).add_listener(listener, data)
+proc addListener*(dataDevice: ptr DataDevice; listener: ptr DataDeviceListener; data: pointer): int {.inline.} =
+  cast[ptr Proxy](dataDevice).add_listener(listener, data)
 
-proc set_user_data*(wl_data_device: ptr wl_data_device; user_data: pointer) {.inline.} =
-  cast[ptr wl_proxy](wl_data_device).set_user_data(user_data)
-proc get_user_data*(wl_data_device: ptr wl_data_device): pointer {.inline.} =
-  cast[ptr wl_proxy](wl_data_device).get_user_data()
-proc get_version*(wl_data_device: ptr wl_data_device): uint32 {.inline.} =
-  cast[ptr wl_proxy](wl_data_device).get_version()
-proc destroy*(wl_data_device: ptr wl_data_device) {.inline.} =
-  destroy cast[ptr wl_proxy](wl_data_device)
-proc start_drag*(wl_data_device: ptr wl_data_device; source: ptr wl_data_source; origin: ptr wl_surface; icon: ptr wl_surface; serial: uint32) {.inline.} =
+proc setUserData*(dataDevice: ptr DataDevice; userData: pointer) {.inline.} =
+  cast[ptr Proxy](dataDevice).set_user_data(user_data)
+proc getUserData*(dataDevice: ptr DataDevice): pointer {.inline.} =
+  cast[ptr Proxy](dataDevice).get_user_data()
+proc getVersion*(dataDevice: ptr DataDevice): uint32 {.inline.} =
+  cast[ptr Proxy](dataDevice).get_version()
+proc destroy*(dataDevice: ptr DataDevice) {.inline.} =
+  destroy cast[ptr Proxy](dataDevice)
+proc startDrag*(dataDevice: ptr DataDevice; source: ptr DataSource; origin: ptr Surface; icon: ptr Surface; serial: uint32) {.inline.} =
   ## start drag-and-drop operation
   ## 
   ## This request asks the compositor to start a drag-and-drop
@@ -562,8 +562,8 @@ proc start_drag*(wl_data_device: ptr wl_data_device; source: ptr wl_data_source;
   ## 	start_drag requests. Attempting to reuse a previously-used source
   ## 	may send a used_source error.
   ## 
-  cast[ptr wl_proxy](wl_data_device).marshal_flags(wl_data_device_request_start_drag.ord, nil, cast[ptr wl_proxy](wl_data_device).get_version(), 0, source, origin, icon, serial)
-proc set_selection*(wl_data_device: ptr wl_data_device; source: ptr wl_data_source; serial: uint32) {.inline.} =
+  cast[ptr Proxy](dataDevice).marshal_flags(DataDeviceRequest_start_drag.ord, nil, cast[ptr Proxy](dataDevice).get_version(), 0, source, origin, icon, serial)
+proc setSelection*(dataDevice: ptr DataDevice; source: ptr DataSource; serial: uint32) {.inline.} =
   ## copy data to the selection
   ## 
   ## This request asks the compositor to set the selection
@@ -575,42 +575,42 @@ proc set_selection*(wl_data_device: ptr wl_data_device; source: ptr wl_data_sour
   ## 	start_drag requests. Attempting to reuse a previously-used source
   ## 	may send a used_source error.
   ## 
-  cast[ptr wl_proxy](wl_data_device).marshal_flags(wl_data_device_request_set_selection.ord, nil, cast[ptr wl_proxy](wl_data_device).get_version(), 0, source, serial)
-proc release*(wl_data_device: ptr wl_data_device) {.inline.} =
+  cast[ptr Proxy](dataDevice).marshal_flags(DataDeviceRequest_set_selection.ord, nil, cast[ptr Proxy](dataDevice).get_version(), 0, source, serial)
+proc release*(dataDevice: ptr DataDevice) {.inline.} =
   ## destroy data device
   ## 
   ## This request destroys the data device.
   ## 
-  cast[ptr wl_proxy](wl_data_device).marshal_flags(wl_data_device_request_release.ord, nil, cast[ptr wl_proxy](wl_data_device).get_version(), WL_MARSHAL_FLAG_DESTROY)
-proc set_user_data*(wl_data_device_manager: ptr wl_data_device_manager; user_data: pointer) {.inline.} =
-  cast[ptr wl_proxy](wl_data_device_manager).set_user_data(user_data)
-proc get_user_data*(wl_data_device_manager: ptr wl_data_device_manager): pointer {.inline.} =
-  cast[ptr wl_proxy](wl_data_device_manager).get_user_data()
-proc get_version*(wl_data_device_manager: ptr wl_data_device_manager): uint32 {.inline.} =
-  cast[ptr wl_proxy](wl_data_device_manager).get_version()
-proc destroy*(wl_data_device_manager: ptr wl_data_device_manager) {.inline.} =
-  destroy cast[ptr wl_proxy](wl_data_device_manager)
-proc create_data_source*(wl_data_device_manager: ptr wl_data_device_manager): ptr wl_data_source {.inline.} =
+  cast[ptr Proxy](dataDevice).marshal_flags(DataDeviceRequest_release.ord, nil, cast[ptr Proxy](dataDevice).get_version(), WL_MARSHAL_FLAG_DESTROY)
+proc setUserData*(dataDeviceManager: ptr DataDeviceManager; userData: pointer) {.inline.} =
+  cast[ptr Proxy](dataDeviceManager).set_user_data(user_data)
+proc getUserData*(dataDeviceManager: ptr DataDeviceManager): pointer {.inline.} =
+  cast[ptr Proxy](dataDeviceManager).get_user_data()
+proc getVersion*(dataDeviceManager: ptr DataDeviceManager): uint32 {.inline.} =
+  cast[ptr Proxy](dataDeviceManager).get_version()
+proc destroy*(dataDeviceManager: ptr DataDeviceManager) {.inline.} =
+  destroy cast[ptr Proxy](dataDeviceManager)
+proc createDataSource*(dataDeviceManager: ptr DataDeviceManager): ptr DataSource {.inline.} =
   ## create a new data source
   ## 
   ## Create a new data source.
   ## 
-  cast[ptr wl_data_source](cast[ptr wl_proxy](wl_data_device_manager).marshal_flags(wl_data_device_manager_request_create_data_source.ord, addr wl_data_source_interface, cast[ptr wl_proxy](wl_data_device_manager).get_version(), 0, nil))
-proc get_data_device*(wl_data_device_manager: ptr wl_data_device_manager; seat: ptr wl_seat): ptr wl_data_device {.inline.} =
+  cast[ptr DataSource](cast[ptr Proxy](dataDeviceManager).marshal_flags(DataDeviceManagerRequest_create_data_source.ord, addr wl_data_source_interface, cast[ptr Proxy](dataDeviceManager).get_version(), 0, nil))
+proc getDataDevice*(dataDeviceManager: ptr DataDeviceManager; seat: ptr Seat): ptr DataDevice {.inline.} =
   ## create a new data device
   ## 
   ## Create a new data device for a given seat.
   ## 
-  cast[ptr wl_data_device](cast[ptr wl_proxy](wl_data_device_manager).marshal_flags(wl_data_device_manager_request_get_data_device.ord, addr wl_data_device_interface, cast[ptr wl_proxy](wl_data_device_manager).get_version(), 0, nil, seat))
-proc set_user_data*(wl_shell: ptr wl_shell; user_data: pointer) {.inline.} =
-  cast[ptr wl_proxy](wl_shell).set_user_data(user_data)
-proc get_user_data*(wl_shell: ptr wl_shell): pointer {.inline.} =
-  cast[ptr wl_proxy](wl_shell).get_user_data()
-proc get_version*(wl_shell: ptr wl_shell): uint32 {.inline.} =
-  cast[ptr wl_proxy](wl_shell).get_version()
-proc destroy*(wl_shell: ptr wl_shell) {.inline.} =
-  destroy cast[ptr wl_proxy](wl_shell)
-proc get_shell_surface*(wl_shell: ptr wl_shell; surface: ptr wl_surface): ptr wl_shell_surface {.inline.} =
+  cast[ptr DataDevice](cast[ptr Proxy](dataDeviceManager).marshal_flags(DataDeviceManagerRequest_get_data_device.ord, addr wl_data_device_interface, cast[ptr Proxy](dataDeviceManager).get_version(), 0, nil, seat))
+proc setUserData*(shell: ptr Shell; userData: pointer) {.inline.} =
+  cast[ptr Proxy](shell).set_user_data(user_data)
+proc getUserData*(shell: ptr Shell): pointer {.inline.} =
+  cast[ptr Proxy](shell).get_user_data()
+proc getVersion*(shell: ptr Shell): uint32 {.inline.} =
+  cast[ptr Proxy](shell).get_version()
+proc destroy*(shell: ptr Shell) {.inline.} =
+  destroy cast[ptr Proxy](shell)
+proc getShellSurface*(shell: ptr Shell; surface: ptr Surface): ptr ShellSurface {.inline.} =
   ## create a shell surface from a surface
   ## 
   ## Create a shell surface for an existing surface. This gives
@@ -619,43 +619,43 @@ proc get_shell_surface*(wl_shell: ptr wl_shell; surface: ptr wl_surface): ptr wl
   ## 
   ## 	Only one shell surface can be associated with a given surface.
   ## 
-  cast[ptr wl_shell_surface](cast[ptr wl_proxy](wl_shell).marshal_flags(wl_shell_request_get_shell_surface.ord, addr wl_shell_surface_interface, cast[ptr wl_proxy](wl_shell).get_version(), 0, nil, surface))
-type WlShellSurfaceListener* = object
+  cast[ptr ShellSurface](cast[ptr Proxy](shell).marshal_flags(ShellRequest_get_shell_surface.ord, addr wl_shell_surface_interface, cast[ptr Proxy](shell).get_version(), 0, nil, surface))
+type ShellSurfaceListener* = object
   ping*: proc(
     data: pointer;
-    wl_shell_surface: ptr wl_shell_surface;
+    shellSurface: ptr ShellSurface;
     serial: uint32;
   ) {.nimcall.}
   configure*: proc(
     data: pointer;
-    wl_shell_surface: ptr wl_shell_surface;
+    shellSurface: ptr ShellSurface;
     edges: uint32;
     width: int32;
     height: int32;
   ) {.nimcall.}
-  popup_done*: proc(
+  popupDone*: proc(
     data: pointer;
-    wl_shell_surface: ptr wl_shell_surface;
+    shellSurface: ptr ShellSurface;
   ) {.nimcall.}
-proc add_listener*(wl_shell_surface: ptr wl_shell_surface; listener: ptr WlShellSurfaceListener; data: pointer): int {.inline.} =
-  cast[ptr wl_proxy](wl_shell_surface).add_listener(listener, data)
+proc addListener*(shellSurface: ptr ShellSurface; listener: ptr ShellSurfaceListener; data: pointer): int {.inline.} =
+  cast[ptr Proxy](shellSurface).add_listener(listener, data)
 
-proc set_user_data*(wl_shell_surface: ptr wl_shell_surface; user_data: pointer) {.inline.} =
-  cast[ptr wl_proxy](wl_shell_surface).set_user_data(user_data)
-proc get_user_data*(wl_shell_surface: ptr wl_shell_surface): pointer {.inline.} =
-  cast[ptr wl_proxy](wl_shell_surface).get_user_data()
-proc get_version*(wl_shell_surface: ptr wl_shell_surface): uint32 {.inline.} =
-  cast[ptr wl_proxy](wl_shell_surface).get_version()
-proc destroy*(wl_shell_surface: ptr wl_shell_surface) {.inline.} =
-  destroy cast[ptr wl_proxy](wl_shell_surface)
-proc pong*(wl_shell_surface: ptr wl_shell_surface; serial: uint32) {.inline.} =
+proc setUserData*(shellSurface: ptr ShellSurface; userData: pointer) {.inline.} =
+  cast[ptr Proxy](shellSurface).set_user_data(user_data)
+proc getUserData*(shellSurface: ptr ShellSurface): pointer {.inline.} =
+  cast[ptr Proxy](shellSurface).get_user_data()
+proc getVersion*(shellSurface: ptr ShellSurface): uint32 {.inline.} =
+  cast[ptr Proxy](shellSurface).get_version()
+proc destroy*(shellSurface: ptr ShellSurface) {.inline.} =
+  destroy cast[ptr Proxy](shellSurface)
+proc pong*(shellSurface: ptr ShellSurface; serial: uint32) {.inline.} =
   ## respond to a ping event
   ## 
   ## A client must respond to a ping event with a pong request or
   ## 	the client may be deemed unresponsive.
   ## 
-  cast[ptr wl_proxy](wl_shell_surface).marshal_flags(wl_shell_surface_request_pong.ord, nil, cast[ptr wl_proxy](wl_shell_surface).get_version(), 0, serial)
-proc move*(wl_shell_surface: ptr wl_shell_surface; seat: ptr wl_seat; serial: uint32) {.inline.} =
+  cast[ptr Proxy](shellSurface).marshal_flags(ShellSurfaceRequest_pong.ord, nil, cast[ptr Proxy](shellSurface).get_version(), 0, serial)
+proc move*(shellSurface: ptr ShellSurface; seat: ptr Seat; serial: uint32) {.inline.} =
   ## start an interactive move
   ## 
   ## Start a pointer-driven move of the surface.
@@ -664,8 +664,8 @@ proc move*(wl_shell_surface: ptr wl_shell_surface; seat: ptr wl_seat; serial: ui
   ## 	The server may ignore move requests depending on the state of
   ## 	the surface (e.g. fullscreen or maximized).
   ## 
-  cast[ptr wl_proxy](wl_shell_surface).marshal_flags(wl_shell_surface_request_move.ord, nil, cast[ptr wl_proxy](wl_shell_surface).get_version(), 0, seat, serial)
-proc resize*(wl_shell_surface: ptr wl_shell_surface; seat: ptr wl_seat; serial: uint32; edges: uint32) {.inline.} =
+  cast[ptr Proxy](shellSurface).marshal_flags(ShellSurfaceRequest_move.ord, nil, cast[ptr Proxy](shellSurface).get_version(), 0, seat, serial)
+proc resize*(shellSurface: ptr ShellSurface; seat: ptr Seat; serial: uint32; edges: uint32) {.inline.} =
   ## start an interactive resize
   ## 
   ## Start a pointer-driven resizing of the surface.
@@ -674,16 +674,16 @@ proc resize*(wl_shell_surface: ptr wl_shell_surface; seat: ptr wl_seat; serial: 
   ## 	The server may ignore resize requests depending on the state of
   ## 	the surface (e.g. fullscreen or maximized).
   ## 
-  cast[ptr wl_proxy](wl_shell_surface).marshal_flags(wl_shell_surface_request_resize.ord, nil, cast[ptr wl_proxy](wl_shell_surface).get_version(), 0, seat, serial, edges)
-proc set_toplevel*(wl_shell_surface: ptr wl_shell_surface) {.inline.} =
+  cast[ptr Proxy](shellSurface).marshal_flags(ShellSurfaceRequest_resize.ord, nil, cast[ptr Proxy](shellSurface).get_version(), 0, seat, serial, edges)
+proc setToplevel*(shellSurface: ptr ShellSurface) {.inline.} =
   ## make the surface a toplevel surface
   ## 
   ## Map the surface as a toplevel surface.
   ## 
   ## 	A toplevel surface is not fullscreen, maximized or transient.
   ## 
-  cast[ptr wl_proxy](wl_shell_surface).marshal_flags(wl_shell_surface_request_set_toplevel.ord, nil, cast[ptr wl_proxy](wl_shell_surface).get_version(), 0)
-proc set_transient*(wl_shell_surface: ptr wl_shell_surface; parent: ptr wl_surface; x: int32; y: int32; flags: uint32) {.inline.} =
+  cast[ptr Proxy](shellSurface).marshal_flags(ShellSurfaceRequest_set_toplevel.ord, nil, cast[ptr Proxy](shellSurface).get_version(), 0)
+proc setTransient*(shellSurface: ptr ShellSurface; parent: ptr Surface; x: int32; y: int32; flags: uint32) {.inline.} =
   ## make the surface a transient surface
   ## 
   ## Map the surface relative to an existing surface.
@@ -694,8 +694,8 @@ proc set_transient*(wl_shell_surface: ptr wl_shell_surface; parent: ptr wl_surfa
   ## 
   ## 	The flags argument controls details of the transient behaviour.
   ## 
-  cast[ptr wl_proxy](wl_shell_surface).marshal_flags(wl_shell_surface_request_set_transient.ord, nil, cast[ptr wl_proxy](wl_shell_surface).get_version(), 0, parent, x, y, flags)
-proc set_fullscreen*(wl_shell_surface: ptr wl_shell_surface; `method`: uint32; framerate: uint32; output: ptr wl_output) {.inline.} =
+  cast[ptr Proxy](shellSurface).marshal_flags(ShellSurfaceRequest_set_transient.ord, nil, cast[ptr Proxy](shellSurface).get_version(), 0, parent, x, y, flags)
+proc setFullscreen*(shellSurface: ptr ShellSurface; `method`: uint32; framerate: uint32; output: ptr Output) {.inline.} =
   ## make the surface a fullscreen surface
   ## 
   ## Map the surface as a fullscreen surface.
@@ -732,8 +732,8 @@ proc set_fullscreen*(wl_shell_surface: ptr wl_shell_surface; `method`: uint32; f
   ## 	with the dimensions for the output on which the surface will
   ## 	be made fullscreen.
   ## 
-  cast[ptr wl_proxy](wl_shell_surface).marshal_flags(wl_shell_surface_request_set_fullscreen.ord, nil, cast[ptr wl_proxy](wl_shell_surface).get_version(), 0, `method`, framerate, output)
-proc set_popup*(wl_shell_surface: ptr wl_shell_surface; seat: ptr wl_seat; serial: uint32; parent: ptr wl_surface; x: int32; y: int32; flags: uint32) {.inline.} =
+  cast[ptr Proxy](shellSurface).marshal_flags(ShellSurfaceRequest_set_fullscreen.ord, nil, cast[ptr Proxy](shellSurface).get_version(), 0, `method`, framerate, output)
+proc setPopup*(shellSurface: ptr ShellSurface; seat: ptr Seat; serial: uint32; parent: ptr Surface; x: int32; y: int32; flags: uint32) {.inline.} =
   ## make the surface a popup surface
   ## 
   ## Map the surface as a popup.
@@ -756,8 +756,8 @@ proc set_popup*(wl_shell_surface: ptr wl_shell_surface; seat: ptr wl_seat; seria
   ## 	corner of the surface relative to the upper left corner of the
   ## 	parent surface, in surface-local coordinates.
   ## 
-  cast[ptr wl_proxy](wl_shell_surface).marshal_flags(wl_shell_surface_request_set_popup.ord, nil, cast[ptr wl_proxy](wl_shell_surface).get_version(), 0, seat, serial, parent, x, y, flags)
-proc set_maximized*(wl_shell_surface: ptr wl_shell_surface; output: ptr wl_output) {.inline.} =
+  cast[ptr Proxy](shellSurface).marshal_flags(ShellSurfaceRequest_set_popup.ord, nil, cast[ptr Proxy](shellSurface).get_version(), 0, seat, serial, parent, x, y, flags)
+proc setMaximized*(shellSurface: ptr ShellSurface; output: ptr Output) {.inline.} =
   ## make the surface a maximized surface
   ## 
   ## Map the surface as a maximized surface.
@@ -779,8 +779,8 @@ proc set_maximized*(wl_shell_surface: ptr wl_shell_surface; output: ptr wl_outpu
   ## 
   ## 	The details depend on the compositor implementation.
   ## 
-  cast[ptr wl_proxy](wl_shell_surface).marshal_flags(wl_shell_surface_request_set_maximized.ord, nil, cast[ptr wl_proxy](wl_shell_surface).get_version(), 0, output)
-proc set_title*(wl_shell_surface: ptr wl_shell_surface; title: cstring) {.inline.} =
+  cast[ptr Proxy](shellSurface).marshal_flags(ShellSurfaceRequest_set_maximized.ord, nil, cast[ptr Proxy](shellSurface).get_version(), 0, output)
+proc setTitle*(shellSurface: ptr ShellSurface; title: cstring) {.inline.} =
   ## set surface title
   ## 
   ## Set a short title for the surface.
@@ -791,8 +791,8 @@ proc set_title*(wl_shell_surface: ptr wl_shell_surface; title: cstring) {.inline
   ## 
   ## 	The string must be encoded in UTF-8.
   ## 
-  cast[ptr wl_proxy](wl_shell_surface).marshal_flags(wl_shell_surface_request_set_title.ord, nil, cast[ptr wl_proxy](wl_shell_surface).get_version(), 0, title)
-proc set_class*(wl_shell_surface: ptr wl_shell_surface; class: cstring) {.inline.} =
+  cast[ptr Proxy](shellSurface).marshal_flags(ShellSurfaceRequest_set_title.ord, nil, cast[ptr Proxy](shellSurface).get_version(), 0, title)
+proc setClass*(shellSurface: ptr ShellSurface; class: cstring) {.inline.} =
   ## set surface class
   ## 
   ## Set a class for the surface.
@@ -802,44 +802,44 @@ proc set_class*(wl_shell_surface: ptr wl_shell_surface; class: cstring) {.inline
   ## 	file name (or the full path if it is a non-standard location) of
   ## 	the application's .desktop file as the class.
   ## 
-  cast[ptr wl_proxy](wl_shell_surface).marshal_flags(wl_shell_surface_request_set_class.ord, nil, cast[ptr wl_proxy](wl_shell_surface).get_version(), 0, class)
-type WlSurfaceListener* = object
+  cast[ptr Proxy](shellSurface).marshal_flags(ShellSurfaceRequest_set_class.ord, nil, cast[ptr Proxy](shellSurface).get_version(), 0, class)
+type SurfaceListener* = object
   enter*: proc(
     data: pointer;
-    wl_surface: ptr wl_surface;
-    output: ptr wl_output;
+    surface: ptr Surface;
+    output: ptr Output;
   ) {.nimcall.}
   leave*: proc(
     data: pointer;
-    wl_surface: ptr wl_surface;
-    output: ptr wl_output;
+    surface: ptr Surface;
+    output: ptr Output;
   ) {.nimcall.}
-  preferred_buffer_scale*: proc(
+  preferredBufferScale*: proc(
     data: pointer;
-    wl_surface: ptr wl_surface;
+    surface: ptr Surface;
     factor: int32;
   ) {.nimcall.}
-  preferred_buffer_transform*: proc(
+  preferredBufferTransform*: proc(
     data: pointer;
-    wl_surface: ptr wl_surface;
+    surface: ptr Surface;
     transform: uint32;
   ) {.nimcall.}
-proc add_listener*(wl_surface: ptr wl_surface; listener: ptr WlSurfaceListener; data: pointer): int {.inline.} =
-  cast[ptr wl_proxy](wl_surface).add_listener(listener, data)
+proc addListener*(surface: ptr Surface; listener: ptr SurfaceListener; data: pointer): int {.inline.} =
+  cast[ptr Proxy](surface).add_listener(listener, data)
 
-proc set_user_data*(wl_surface: ptr wl_surface; user_data: pointer) {.inline.} =
-  cast[ptr wl_proxy](wl_surface).set_user_data(user_data)
-proc get_user_data*(wl_surface: ptr wl_surface): pointer {.inline.} =
-  cast[ptr wl_proxy](wl_surface).get_user_data()
-proc get_version*(wl_surface: ptr wl_surface): uint32 {.inline.} =
-  cast[ptr wl_proxy](wl_surface).get_version()
-proc destroy*(wl_surface: ptr wl_surface) {.inline.} =
+proc setUserData*(surface: ptr Surface; userData: pointer) {.inline.} =
+  cast[ptr Proxy](surface).set_user_data(user_data)
+proc getUserData*(surface: ptr Surface): pointer {.inline.} =
+  cast[ptr Proxy](surface).get_user_data()
+proc getVersion*(surface: ptr Surface): uint32 {.inline.} =
+  cast[ptr Proxy](surface).get_version()
+proc destroy*(surface: ptr Surface) {.inline.} =
   ## delete surface
   ## 
   ## Deletes the surface and invalidates its object ID.
   ## 
-  cast[ptr wl_proxy](wl_surface).marshal_flags(wl_surface_request_destroy.ord, nil, cast[ptr wl_proxy](wl_surface).get_version(), WL_MARSHAL_FLAG_DESTROY)
-proc attach*(wl_surface: ptr wl_surface; buffer: ptr wl_buffer; x: int32; y: int32) {.inline.} =
+  cast[ptr Proxy](surface).marshal_flags(SurfaceRequest_destroy.ord, nil, cast[ptr Proxy](surface).get_version(), WL_MARSHAL_FLAG_DESTROY)
+proc attach*(surface: ptr Surface; buffer: ptr Buffer; x: int32; y: int32) {.inline.} =
   ## set the surface contents
   ## 
   ## Set a buffer as the content of this surface.
@@ -907,8 +907,8 @@ proc attach*(wl_surface: ptr wl_surface; buffer: ptr wl_buffer; x: int32; y: int
   ## 	ensure that they explicitly remove content from surfaces, even after
   ## 	destroying buffers.
   ## 
-  cast[ptr wl_proxy](wl_surface).marshal_flags(wl_surface_request_attach.ord, nil, cast[ptr wl_proxy](wl_surface).get_version(), 0, buffer, x, y)
-proc damage*(wl_surface: ptr wl_surface; x: int32; y: int32; width: int32; height: int32) {.inline.} =
+  cast[ptr Proxy](surface).marshal_flags(SurfaceRequest_attach.ord, nil, cast[ptr Proxy](surface).get_version(), 0, buffer, x, y)
+proc damage*(surface: ptr Surface; x: int32; y: int32; width: int32; height: int32) {.inline.} =
   ## mark part of the surface damaged
   ## 
   ## This request is used to describe the regions where the pending
@@ -933,8 +933,8 @@ proc damage*(wl_surface: ptr wl_surface; x: int32; y: int32; width: int32; heigh
   ## 	posted with wl_surface.damage_buffer which uses buffer coordinates
   ## 	instead of surface coordinates.
   ## 
-  cast[ptr wl_proxy](wl_surface).marshal_flags(wl_surface_request_damage.ord, nil, cast[ptr wl_proxy](wl_surface).get_version(), 0, x, y, width, height)
-proc frame*(wl_surface: ptr wl_surface): ptr wl_callback {.inline.} =
+  cast[ptr Proxy](surface).marshal_flags(SurfaceRequest_damage.ord, nil, cast[ptr Proxy](surface).get_version(), 0, x, y, width, height)
+proc frame*(surface: ptr Surface): ptr Callback {.inline.} =
   ## request a frame throttling hint
   ## 
   ## Request a notification when it is a good time to start drawing a new
@@ -970,8 +970,8 @@ proc frame*(wl_surface: ptr wl_surface): ptr wl_callback {.inline.} =
   ## 	The callback_data passed in the callback is the current time, in
   ## 	milliseconds, with an undefined base.
   ## 
-  cast[ptr wl_callback](cast[ptr wl_proxy](wl_surface).marshal_flags(wl_surface_request_frame.ord, addr wl_callback_interface, cast[ptr wl_proxy](wl_surface).get_version(), 0, nil))
-proc set_opaque_region*(wl_surface: ptr wl_surface; region: ptr wl_region) {.inline.} =
+  cast[ptr Callback](cast[ptr Proxy](surface).marshal_flags(SurfaceRequest_frame.ord, addr wl_callback_interface, cast[ptr Proxy](surface).get_version(), 0, nil))
+proc setOpaqueRegion*(surface: ptr Surface; region: ptr Region) {.inline.} =
   ## set opaque region
   ## 
   ## This request sets the region of the surface that contains
@@ -999,8 +999,8 @@ proc set_opaque_region*(wl_surface: ptr wl_surface; region: ptr wl_region) {.inl
   ## 	destroyed immediately. A NULL wl_region causes the pending opaque
   ## 	region to be set to empty.
   ## 
-  cast[ptr wl_proxy](wl_surface).marshal_flags(wl_surface_request_set_opaque_region.ord, nil, cast[ptr wl_proxy](wl_surface).get_version(), 0, region)
-proc set_input_region*(wl_surface: ptr wl_surface; region: ptr wl_region) {.inline.} =
+  cast[ptr Proxy](surface).marshal_flags(SurfaceRequest_set_opaque_region.ord, nil, cast[ptr Proxy](surface).get_version(), 0, region)
+proc setInputRegion*(surface: ptr Surface; region: ptr Region) {.inline.} =
   ## set input region
   ## 
   ## This request sets the region of the surface that can receive
@@ -1026,8 +1026,8 @@ proc set_input_region*(wl_surface: ptr wl_surface; region: ptr wl_region) {.inli
   ## 	immediately. A NULL wl_region causes the input region to be set
   ## 	to infinite.
   ## 
-  cast[ptr wl_proxy](wl_surface).marshal_flags(wl_surface_request_set_input_region.ord, nil, cast[ptr wl_proxy](wl_surface).get_version(), 0, region)
-proc commit*(wl_surface: ptr wl_surface) {.inline.} =
+  cast[ptr Proxy](surface).marshal_flags(SurfaceRequest_set_input_region.ord, nil, cast[ptr Proxy](surface).get_version(), 0, region)
+proc commit*(surface: ptr Surface) {.inline.} =
   ## commit pending surface state
   ## 
   ## Surface state (input, opaque, and damage regions, attached buffers,
@@ -1050,8 +1050,8 @@ proc commit*(wl_surface: ptr wl_surface) {.inline.} =
   ## 
   ## 	Other interfaces may add further double-buffered surface state.
   ## 
-  cast[ptr wl_proxy](wl_surface).marshal_flags(wl_surface_request_commit.ord, nil, cast[ptr wl_proxy](wl_surface).get_version(), 0)
-proc set_buffer_transform*(wl_surface: ptr wl_surface; transform: int32) {.inline.} =
+  cast[ptr Proxy](surface).marshal_flags(SurfaceRequest_commit.ord, nil, cast[ptr Proxy](surface).get_version(), 0)
+proc setBufferTransform*(surface: ptr Surface; transform: int32) {.inline.} =
   ## sets the buffer transformation
   ## 
   ## This request sets the transformation that the client has already applied
@@ -1086,8 +1086,8 @@ proc set_buffer_transform*(wl_surface: ptr wl_surface; transform: int32) {.inlin
   ## 	wl_output.transform enum the invalid_transform protocol error
   ## 	is raised.
   ## 
-  cast[ptr wl_proxy](wl_surface).marshal_flags(wl_surface_request_set_buffer_transform.ord, nil, cast[ptr wl_proxy](wl_surface).get_version(), 0, transform)
-proc set_buffer_scale*(wl_surface: ptr wl_surface; scale: int32) {.inline.} =
+  cast[ptr Proxy](surface).marshal_flags(SurfaceRequest_set_buffer_transform.ord, nil, cast[ptr Proxy](surface).get_version(), 0, transform)
+proc setBufferScale*(surface: ptr Surface; scale: int32) {.inline.} =
   ## sets the buffer scaling factor
   ## 
   ## This request sets an optional scaling factor on how the compositor
@@ -1114,8 +1114,8 @@ proc set_buffer_scale*(wl_surface: ptr wl_surface; scale: int32) {.inline.} =
   ## 	If scale is not greater than 0 the invalid_scale protocol error is
   ## 	raised.
   ## 
-  cast[ptr wl_proxy](wl_surface).marshal_flags(wl_surface_request_set_buffer_scale.ord, nil, cast[ptr wl_proxy](wl_surface).get_version(), 0, scale)
-proc damage_buffer*(wl_surface: ptr wl_surface; x: int32; y: int32; width: int32; height: int32) {.inline.} =
+  cast[ptr Proxy](surface).marshal_flags(SurfaceRequest_set_buffer_scale.ord, nil, cast[ptr Proxy](surface).get_version(), 0, scale)
+proc damageBuffer*(surface: ptr Surface; x: int32; y: int32; width: int32; height: int32) {.inline.} =
   ## mark part of the surface damaged using buffer coordinates
   ## 
   ## This request is used to describe the regions where the pending
@@ -1151,8 +1151,8 @@ proc damage_buffer*(wl_surface: ptr wl_surface; x: int32; y: int32; width: int32
   ## 	two requests separately and only transform from one to the other
   ## 	after receiving the wl_surface.commit.
   ## 
-  cast[ptr wl_proxy](wl_surface).marshal_flags(wl_surface_request_damage_buffer.ord, nil, cast[ptr wl_proxy](wl_surface).get_version(), 0, x, y, width, height)
-proc offset*(wl_surface: ptr wl_surface; x: int32; y: int32) {.inline.} =
+  cast[ptr Proxy](surface).marshal_flags(SurfaceRequest_damage_buffer.ord, nil, cast[ptr Proxy](surface).get_version(), 0, x, y, width, height)
+proc offset*(surface: ptr Surface; x: int32; y: int32) {.inline.} =
   ## set the surface contents offset
   ## 
   ## The x and y arguments specify the location of the new pending
@@ -1168,30 +1168,30 @@ proc offset*(wl_surface: ptr wl_surface; x: int32; y: int32) {.inline.} =
   ## 	arguments in the wl_surface.attach request in wl_surface versions prior
   ## 	to 5. See wl_surface.attach for details.
   ## 
-  cast[ptr wl_proxy](wl_surface).marshal_flags(wl_surface_request_offset.ord, nil, cast[ptr wl_proxy](wl_surface).get_version(), 0, x, y)
-type WlSeatListener* = object
+  cast[ptr Proxy](surface).marshal_flags(SurfaceRequest_offset.ord, nil, cast[ptr Proxy](surface).get_version(), 0, x, y)
+type SeatListener* = object
   capabilities*: proc(
     data: pointer;
-    wl_seat: ptr wl_seat;
+    seat: ptr Seat;
     capabilities: uint32;
   ) {.nimcall.}
   name*: proc(
     data: pointer;
-    wl_seat: ptr wl_seat;
+    seat: ptr Seat;
     name: cstring;
   ) {.nimcall.}
-proc add_listener*(wl_seat: ptr wl_seat; listener: ptr WlSeatListener; data: pointer): int {.inline.} =
-  cast[ptr wl_proxy](wl_seat).add_listener(listener, data)
+proc addListener*(seat: ptr Seat; listener: ptr SeatListener; data: pointer): int {.inline.} =
+  cast[ptr Proxy](seat).add_listener(listener, data)
 
-proc set_user_data*(wl_seat: ptr wl_seat; user_data: pointer) {.inline.} =
-  cast[ptr wl_proxy](wl_seat).set_user_data(user_data)
-proc get_user_data*(wl_seat: ptr wl_seat): pointer {.inline.} =
-  cast[ptr wl_proxy](wl_seat).get_user_data()
-proc get_version*(wl_seat: ptr wl_seat): uint32 {.inline.} =
-  cast[ptr wl_proxy](wl_seat).get_version()
-proc destroy*(wl_seat: ptr wl_seat) {.inline.} =
-  destroy cast[ptr wl_proxy](wl_seat)
-proc get_pointer*(wl_seat: ptr wl_seat): ptr wl_pointer {.inline.} =
+proc setUserData*(seat: ptr Seat; userData: pointer) {.inline.} =
+  cast[ptr Proxy](seat).set_user_data(user_data)
+proc getUserData*(seat: ptr Seat): pointer {.inline.} =
+  cast[ptr Proxy](seat).get_user_data()
+proc getVersion*(seat: ptr Seat): uint32 {.inline.} =
+  cast[ptr Proxy](seat).get_version()
+proc destroy*(seat: ptr Seat) {.inline.} =
+  destroy cast[ptr Proxy](seat)
+proc getPointer*(seat: ptr Seat): ptr Pointer {.inline.} =
   ## return pointer object
   ## 
   ## The ID provided will be initialized to the wl_pointer interface
@@ -1203,8 +1203,8 @@ proc get_pointer*(wl_seat: ptr wl_seat): ptr wl_pointer {.inline.} =
   ## 	never had the pointer capability. The missing_capability error will
   ## 	be sent in this case.
   ## 
-  cast[ptr wl_pointer](cast[ptr wl_proxy](wl_seat).marshal_flags(wl_seat_request_get_pointer.ord, addr wl_pointer_interface, cast[ptr wl_proxy](wl_seat).get_version(), 0, nil))
-proc get_keyboard*(wl_seat: ptr wl_seat): ptr wl_keyboard {.inline.} =
+  cast[ptr Pointer](cast[ptr Proxy](seat).marshal_flags(SeatRequest_get_pointer.ord, addr wl_pointer_interface, cast[ptr Proxy](seat).get_version(), 0, nil))
+proc getKeyboard*(seat: ptr Seat): ptr Keyboard {.inline.} =
   ## return keyboard object
   ## 
   ## The ID provided will be initialized to the wl_keyboard interface
@@ -1216,8 +1216,8 @@ proc get_keyboard*(wl_seat: ptr wl_seat): ptr wl_keyboard {.inline.} =
   ## 	never had the keyboard capability. The missing_capability error will
   ## 	be sent in this case.
   ## 
-  cast[ptr wl_keyboard](cast[ptr wl_proxy](wl_seat).marshal_flags(wl_seat_request_get_keyboard.ord, addr wl_keyboard_interface, cast[ptr wl_proxy](wl_seat).get_version(), 0, nil))
-proc get_touch*(wl_seat: ptr wl_seat): ptr wl_touch {.inline.} =
+  cast[ptr Keyboard](cast[ptr Proxy](seat).marshal_flags(SeatRequest_get_keyboard.ord, addr wl_keyboard_interface, cast[ptr Proxy](seat).get_version(), 0, nil))
+proc getTouch*(seat: ptr Seat): ptr Touch {.inline.} =
   ## return touch object
   ## 
   ## The ID provided will be initialized to the wl_touch interface
@@ -1229,39 +1229,39 @@ proc get_touch*(wl_seat: ptr wl_seat): ptr wl_touch {.inline.} =
   ## 	never had the touch capability. The missing_capability error will
   ## 	be sent in this case.
   ## 
-  cast[ptr wl_touch](cast[ptr wl_proxy](wl_seat).marshal_flags(wl_seat_request_get_touch.ord, addr wl_touch_interface, cast[ptr wl_proxy](wl_seat).get_version(), 0, nil))
-proc release*(wl_seat: ptr wl_seat) {.inline.} =
+  cast[ptr Touch](cast[ptr Proxy](seat).marshal_flags(SeatRequest_get_touch.ord, addr wl_touch_interface, cast[ptr Proxy](seat).get_version(), 0, nil))
+proc release*(seat: ptr Seat) {.inline.} =
   ## release the seat object
   ## 
   ## Using this request a client can tell the server that it is not going to
   ## 	use the seat object anymore.
   ## 
-  cast[ptr wl_proxy](wl_seat).marshal_flags(wl_seat_request_release.ord, nil, cast[ptr wl_proxy](wl_seat).get_version(), WL_MARSHAL_FLAG_DESTROY)
-type WlPointerListener* = object
+  cast[ptr Proxy](seat).marshal_flags(SeatRequest_release.ord, nil, cast[ptr Proxy](seat).get_version(), WL_MARSHAL_FLAG_DESTROY)
+type PointerListener* = object
   enter*: proc(
     data: pointer;
-    wl_pointer: ptr wl_pointer;
+    pointer: ptr Pointer;
     serial: uint32;
-    surface: ptr wl_surface;
-    surface_x: wl_fixed_t;
-    surface_y: wl_fixed_t;
+    surface: ptr Surface;
+    surfaceX: Fixed;
+    surfaceY: Fixed;
   ) {.nimcall.}
   leave*: proc(
     data: pointer;
-    wl_pointer: ptr wl_pointer;
+    pointer: ptr Pointer;
     serial: uint32;
-    surface: ptr wl_surface;
+    surface: ptr Surface;
   ) {.nimcall.}
   motion*: proc(
     data: pointer;
-    wl_pointer: ptr wl_pointer;
+    pointer: ptr Pointer;
     time: uint32;
-    surface_x: wl_fixed_t;
-    surface_y: wl_fixed_t;
+    surfaceX: Fixed;
+    surfaceY: Fixed;
   ) {.nimcall.}
   button*: proc(
     data: pointer;
-    wl_pointer: ptr wl_pointer;
+    pointer: ptr Pointer;
     serial: uint32;
     time: uint32;
     button: uint32;
@@ -1269,56 +1269,56 @@ type WlPointerListener* = object
   ) {.nimcall.}
   axis*: proc(
     data: pointer;
-    wl_pointer: ptr wl_pointer;
+    pointer: ptr Pointer;
     time: uint32;
     axis: uint32;
-    value: wl_fixed_t;
+    value: Fixed;
   ) {.nimcall.}
   frame*: proc(
     data: pointer;
-    wl_pointer: ptr wl_pointer;
+    pointer: ptr Pointer;
   ) {.nimcall.}
-  axis_source*: proc(
+  axisSource*: proc(
     data: pointer;
-    wl_pointer: ptr wl_pointer;
-    axis_source: uint32;
+    pointer: ptr Pointer;
+    axisSource: uint32;
   ) {.nimcall.}
-  axis_stop*: proc(
+  axisStop*: proc(
     data: pointer;
-    wl_pointer: ptr wl_pointer;
+    pointer: ptr Pointer;
     time: uint32;
     axis: uint32;
   ) {.nimcall.}
-  axis_discrete*: proc(
+  axisDiscrete*: proc(
     data: pointer;
-    wl_pointer: ptr wl_pointer;
+    pointer: ptr Pointer;
     axis: uint32;
     discrete: int32;
   ) {.nimcall.}
-  axis_value120*: proc(
+  axisValue120*: proc(
     data: pointer;
-    wl_pointer: ptr wl_pointer;
+    pointer: ptr Pointer;
     axis: uint32;
     value120: int32;
   ) {.nimcall.}
-  axis_relative_direction*: proc(
+  axisRelativeDirection*: proc(
     data: pointer;
-    wl_pointer: ptr wl_pointer;
+    pointer: ptr Pointer;
     axis: uint32;
     direction: uint32;
   ) {.nimcall.}
-proc add_listener*(wl_pointer: ptr wl_pointer; listener: ptr WlPointerListener; data: pointer): int {.inline.} =
-  cast[ptr wl_proxy](wl_pointer).add_listener(listener, data)
+proc addListener*(pointer: ptr Pointer; listener: ptr PointerListener; data: pointer): int {.inline.} =
+  cast[ptr Proxy](pointer).add_listener(listener, data)
 
-proc set_user_data*(wl_pointer: ptr wl_pointer; user_data: pointer) {.inline.} =
-  cast[ptr wl_proxy](wl_pointer).set_user_data(user_data)
-proc get_user_data*(wl_pointer: ptr wl_pointer): pointer {.inline.} =
-  cast[ptr wl_proxy](wl_pointer).get_user_data()
-proc get_version*(wl_pointer: ptr wl_pointer): uint32 {.inline.} =
-  cast[ptr wl_proxy](wl_pointer).get_version()
-proc destroy*(wl_pointer: ptr wl_pointer) {.inline.} =
-  destroy cast[ptr wl_proxy](wl_pointer)
-proc set_cursor*(wl_pointer: ptr wl_pointer; serial: uint32; surface: ptr wl_surface; hotspot_x: int32; hotspot_y: int32) {.inline.} =
+proc setUserData*(pointer: ptr Pointer; userData: pointer) {.inline.} =
+  cast[ptr Proxy](pointer).set_user_data(user_data)
+proc getUserData*(pointer: ptr Pointer): pointer {.inline.} =
+  cast[ptr Proxy](pointer).get_user_data()
+proc getVersion*(pointer: ptr Pointer): uint32 {.inline.} =
+  cast[ptr Proxy](pointer).get_version()
+proc destroy*(pointer: ptr Pointer) {.inline.} =
+  destroy cast[ptr Proxy](pointer)
+proc setCursor*(pointer: ptr Pointer; serial: uint32; surface: ptr Surface; hotspotX: int32; hotspotY: int32) {.inline.} =
   ## set the pointer surface
   ## 
   ## Set the pointer surface, i.e., the surface that contains the
@@ -1355,8 +1355,8 @@ proc set_cursor*(wl_pointer: ptr wl_pointer; serial: uint32; surface: ptr wl_sur
   ## 	serial number sent to the client. Otherwise the request will be
   ## 	ignored.
   ## 
-  cast[ptr wl_proxy](wl_pointer).marshal_flags(wl_pointer_request_set_cursor.ord, nil, cast[ptr wl_proxy](wl_pointer).get_version(), 0, serial, surface, hotspot_x, hotspot_y)
-proc release*(wl_pointer: ptr wl_pointer) {.inline.} =
+  cast[ptr Proxy](pointer).marshal_flags(PointerRequest_set_cursor.ord, nil, cast[ptr Proxy](pointer).get_version(), 0, serial, surface, hotspotX, hotspotY)
+proc release*(pointer: ptr Pointer) {.inline.} =
   ## release the pointer object
   ## 
   ## Using this request a client can tell the server that it is not going to
@@ -1365,31 +1365,31 @@ proc release*(wl_pointer: ptr wl_pointer) {.inline.} =
   ## 	This request destroys the pointer proxy object, so clients must not call
   ## 	wl_pointer_destroy() after using this request.
   ## 
-  cast[ptr wl_proxy](wl_pointer).marshal_flags(wl_pointer_request_release.ord, nil, cast[ptr wl_proxy](wl_pointer).get_version(), WL_MARSHAL_FLAG_DESTROY)
-type WlKeyboardListener* = object
+  cast[ptr Proxy](pointer).marshal_flags(PointerRequest_release.ord, nil, cast[ptr Proxy](pointer).get_version(), WL_MARSHAL_FLAG_DESTROY)
+type KeyboardListener* = object
   keymap*: proc(
     data: pointer;
-    wl_keyboard: ptr wl_keyboard;
+    keyboard: ptr Keyboard;
     format: uint32;
     fd: int32;
     size: uint32;
   ) {.nimcall.}
   enter*: proc(
     data: pointer;
-    wl_keyboard: ptr wl_keyboard;
+    keyboard: ptr Keyboard;
     serial: uint32;
-    surface: ptr wl_surface;
-    keys: ptr wl_array;
+    surface: ptr Surface;
+    keys: ptr Array;
   ) {.nimcall.}
   leave*: proc(
     data: pointer;
-    wl_keyboard: ptr wl_keyboard;
+    keyboard: ptr Keyboard;
     serial: uint32;
-    surface: ptr wl_surface;
+    surface: ptr Surface;
   ) {.nimcall.}
   key*: proc(
     data: pointer;
-    wl_keyboard: ptr wl_keyboard;
+    keyboard: ptr Keyboard;
     serial: uint32;
     time: uint32;
     key: uint32;
@@ -1397,102 +1397,102 @@ type WlKeyboardListener* = object
   ) {.nimcall.}
   modifiers*: proc(
     data: pointer;
-    wl_keyboard: ptr wl_keyboard;
+    keyboard: ptr Keyboard;
     serial: uint32;
-    mods_depressed: uint32;
-    mods_latched: uint32;
-    mods_locked: uint32;
+    modsDepressed: uint32;
+    modsLatched: uint32;
+    modsLocked: uint32;
     group: uint32;
   ) {.nimcall.}
-  repeat_info*: proc(
+  repeatInfo*: proc(
     data: pointer;
-    wl_keyboard: ptr wl_keyboard;
+    keyboard: ptr Keyboard;
     rate: int32;
     delay: int32;
   ) {.nimcall.}
-proc add_listener*(wl_keyboard: ptr wl_keyboard; listener: ptr WlKeyboardListener; data: pointer): int {.inline.} =
-  cast[ptr wl_proxy](wl_keyboard).add_listener(listener, data)
+proc addListener*(keyboard: ptr Keyboard; listener: ptr KeyboardListener; data: pointer): int {.inline.} =
+  cast[ptr Proxy](keyboard).add_listener(listener, data)
 
-proc set_user_data*(wl_keyboard: ptr wl_keyboard; user_data: pointer) {.inline.} =
-  cast[ptr wl_proxy](wl_keyboard).set_user_data(user_data)
-proc get_user_data*(wl_keyboard: ptr wl_keyboard): pointer {.inline.} =
-  cast[ptr wl_proxy](wl_keyboard).get_user_data()
-proc get_version*(wl_keyboard: ptr wl_keyboard): uint32 {.inline.} =
-  cast[ptr wl_proxy](wl_keyboard).get_version()
-proc destroy*(wl_keyboard: ptr wl_keyboard) {.inline.} =
-  destroy cast[ptr wl_proxy](wl_keyboard)
-proc release*(wl_keyboard: ptr wl_keyboard) {.inline.} =
+proc setUserData*(keyboard: ptr Keyboard; userData: pointer) {.inline.} =
+  cast[ptr Proxy](keyboard).set_user_data(user_data)
+proc getUserData*(keyboard: ptr Keyboard): pointer {.inline.} =
+  cast[ptr Proxy](keyboard).get_user_data()
+proc getVersion*(keyboard: ptr Keyboard): uint32 {.inline.} =
+  cast[ptr Proxy](keyboard).get_version()
+proc destroy*(keyboard: ptr Keyboard) {.inline.} =
+  destroy cast[ptr Proxy](keyboard)
+proc release*(keyboard: ptr Keyboard) {.inline.} =
   ## release the keyboard object
-  cast[ptr wl_proxy](wl_keyboard).marshal_flags(wl_keyboard_request_release.ord, nil, cast[ptr wl_proxy](wl_keyboard).get_version(), WL_MARSHAL_FLAG_DESTROY)
-type WlTouchListener* = object
+  cast[ptr Proxy](keyboard).marshal_flags(KeyboardRequest_release.ord, nil, cast[ptr Proxy](keyboard).get_version(), WL_MARSHAL_FLAG_DESTROY)
+type TouchListener* = object
   down*: proc(
     data: pointer;
-    wl_touch: ptr wl_touch;
+    touch: ptr Touch;
     serial: uint32;
     time: uint32;
-    surface: ptr wl_surface;
+    surface: ptr Surface;
     id: int32;
-    x: wl_fixed_t;
-    y: wl_fixed_t;
+    x: Fixed;
+    y: Fixed;
   ) {.nimcall.}
   up*: proc(
     data: pointer;
-    wl_touch: ptr wl_touch;
+    touch: ptr Touch;
     serial: uint32;
     time: uint32;
     id: int32;
   ) {.nimcall.}
   motion*: proc(
     data: pointer;
-    wl_touch: ptr wl_touch;
+    touch: ptr Touch;
     time: uint32;
     id: int32;
-    x: wl_fixed_t;
-    y: wl_fixed_t;
+    x: Fixed;
+    y: Fixed;
   ) {.nimcall.}
   frame*: proc(
     data: pointer;
-    wl_touch: ptr wl_touch;
+    touch: ptr Touch;
   ) {.nimcall.}
   cancel*: proc(
     data: pointer;
-    wl_touch: ptr wl_touch;
+    touch: ptr Touch;
   ) {.nimcall.}
   shape*: proc(
     data: pointer;
-    wl_touch: ptr wl_touch;
+    touch: ptr Touch;
     id: int32;
-    major: wl_fixed_t;
-    minor: wl_fixed_t;
+    major: Fixed;
+    minor: Fixed;
   ) {.nimcall.}
   orientation*: proc(
     data: pointer;
-    wl_touch: ptr wl_touch;
+    touch: ptr Touch;
     id: int32;
-    orientation: wl_fixed_t;
+    orientation: Fixed;
   ) {.nimcall.}
-proc add_listener*(wl_touch: ptr wl_touch; listener: ptr WlTouchListener; data: pointer): int {.inline.} =
-  cast[ptr wl_proxy](wl_touch).add_listener(listener, data)
+proc addListener*(touch: ptr Touch; listener: ptr TouchListener; data: pointer): int {.inline.} =
+  cast[ptr Proxy](touch).add_listener(listener, data)
 
-proc set_user_data*(wl_touch: ptr wl_touch; user_data: pointer) {.inline.} =
-  cast[ptr wl_proxy](wl_touch).set_user_data(user_data)
-proc get_user_data*(wl_touch: ptr wl_touch): pointer {.inline.} =
-  cast[ptr wl_proxy](wl_touch).get_user_data()
-proc get_version*(wl_touch: ptr wl_touch): uint32 {.inline.} =
-  cast[ptr wl_proxy](wl_touch).get_version()
-proc destroy*(wl_touch: ptr wl_touch) {.inline.} =
-  destroy cast[ptr wl_proxy](wl_touch)
-proc release*(wl_touch: ptr wl_touch) {.inline.} =
+proc setUserData*(touch: ptr Touch; userData: pointer) {.inline.} =
+  cast[ptr Proxy](touch).set_user_data(user_data)
+proc getUserData*(touch: ptr Touch): pointer {.inline.} =
+  cast[ptr Proxy](touch).get_user_data()
+proc getVersion*(touch: ptr Touch): uint32 {.inline.} =
+  cast[ptr Proxy](touch).get_version()
+proc destroy*(touch: ptr Touch) {.inline.} =
+  destroy cast[ptr Proxy](touch)
+proc release*(touch: ptr Touch) {.inline.} =
   ## release the touch object
-  cast[ptr wl_proxy](wl_touch).marshal_flags(wl_touch_request_release.ord, nil, cast[ptr wl_proxy](wl_touch).get_version(), WL_MARSHAL_FLAG_DESTROY)
-type WlOutputListener* = object
+  cast[ptr Proxy](touch).marshal_flags(TouchRequest_release.ord, nil, cast[ptr Proxy](touch).get_version(), WL_MARSHAL_FLAG_DESTROY)
+type OutputListener* = object
   geometry*: proc(
     data: pointer;
-    wl_output: ptr wl_output;
+    output: ptr Output;
     x: int32;
     y: int32;
-    physical_width: int32;
-    physical_height: int32;
+    physicalWidth: int32;
+    physicalHeight: int32;
     subpixel: int32;
     make: cstring;
     model: cstring;
@@ -1500,7 +1500,7 @@ type WlOutputListener* = object
   ) {.nimcall.}
   mode*: proc(
     data: pointer;
-    wl_output: ptr wl_output;
+    output: ptr Output;
     flags: uint32;
     width: int32;
     height: int32;
@@ -1508,80 +1508,80 @@ type WlOutputListener* = object
   ) {.nimcall.}
   done*: proc(
     data: pointer;
-    wl_output: ptr wl_output;
+    output: ptr Output;
   ) {.nimcall.}
   scale*: proc(
     data: pointer;
-    wl_output: ptr wl_output;
+    output: ptr Output;
     factor: int32;
   ) {.nimcall.}
   name*: proc(
     data: pointer;
-    wl_output: ptr wl_output;
+    output: ptr Output;
     name: cstring;
   ) {.nimcall.}
   description*: proc(
     data: pointer;
-    wl_output: ptr wl_output;
+    output: ptr Output;
     description: cstring;
   ) {.nimcall.}
-proc add_listener*(wl_output: ptr wl_output; listener: ptr WlOutputListener; data: pointer): int {.inline.} =
-  cast[ptr wl_proxy](wl_output).add_listener(listener, data)
+proc addListener*(output: ptr Output; listener: ptr OutputListener; data: pointer): int {.inline.} =
+  cast[ptr Proxy](output).add_listener(listener, data)
 
-proc set_user_data*(wl_output: ptr wl_output; user_data: pointer) {.inline.} =
-  cast[ptr wl_proxy](wl_output).set_user_data(user_data)
-proc get_user_data*(wl_output: ptr wl_output): pointer {.inline.} =
-  cast[ptr wl_proxy](wl_output).get_user_data()
-proc get_version*(wl_output: ptr wl_output): uint32 {.inline.} =
-  cast[ptr wl_proxy](wl_output).get_version()
-proc destroy*(wl_output: ptr wl_output) {.inline.} =
-  destroy cast[ptr wl_proxy](wl_output)
-proc release*(wl_output: ptr wl_output) {.inline.} =
+proc setUserData*(output: ptr Output; userData: pointer) {.inline.} =
+  cast[ptr Proxy](output).set_user_data(user_data)
+proc getUserData*(output: ptr Output): pointer {.inline.} =
+  cast[ptr Proxy](output).get_user_data()
+proc getVersion*(output: ptr Output): uint32 {.inline.} =
+  cast[ptr Proxy](output).get_version()
+proc destroy*(output: ptr Output) {.inline.} =
+  destroy cast[ptr Proxy](output)
+proc release*(output: ptr Output) {.inline.} =
   ## release the output object
   ## 
   ## Using this request a client can tell the server that it is not going to
   ## 	use the output object anymore.
   ## 
-  cast[ptr wl_proxy](wl_output).marshal_flags(wl_output_request_release.ord, nil, cast[ptr wl_proxy](wl_output).get_version(), WL_MARSHAL_FLAG_DESTROY)
-proc set_user_data*(wl_region: ptr wl_region; user_data: pointer) {.inline.} =
-  cast[ptr wl_proxy](wl_region).set_user_data(user_data)
-proc get_user_data*(wl_region: ptr wl_region): pointer {.inline.} =
-  cast[ptr wl_proxy](wl_region).get_user_data()
-proc get_version*(wl_region: ptr wl_region): uint32 {.inline.} =
-  cast[ptr wl_proxy](wl_region).get_version()
-proc destroy*(wl_region: ptr wl_region) {.inline.} =
+  cast[ptr Proxy](output).marshal_flags(OutputRequest_release.ord, nil, cast[ptr Proxy](output).get_version(), WL_MARSHAL_FLAG_DESTROY)
+proc setUserData*(region: ptr Region; userData: pointer) {.inline.} =
+  cast[ptr Proxy](region).set_user_data(user_data)
+proc getUserData*(region: ptr Region): pointer {.inline.} =
+  cast[ptr Proxy](region).get_user_data()
+proc getVersion*(region: ptr Region): uint32 {.inline.} =
+  cast[ptr Proxy](region).get_version()
+proc destroy*(region: ptr Region) {.inline.} =
   ## destroy region
   ## 
   ## Destroy the region.  This will invalidate the object ID.
   ## 
-  cast[ptr wl_proxy](wl_region).marshal_flags(wl_region_request_destroy.ord, nil, cast[ptr wl_proxy](wl_region).get_version(), WL_MARSHAL_FLAG_DESTROY)
-proc add*(wl_region: ptr wl_region; x: int32; y: int32; width: int32; height: int32) {.inline.} =
+  cast[ptr Proxy](region).marshal_flags(RegionRequest_destroy.ord, nil, cast[ptr Proxy](region).get_version(), WL_MARSHAL_FLAG_DESTROY)
+proc add*(region: ptr Region; x: int32; y: int32; width: int32; height: int32) {.inline.} =
   ## add rectangle to region
   ## 
   ## Add the specified rectangle to the region.
   ## 
-  cast[ptr wl_proxy](wl_region).marshal_flags(wl_region_request_add.ord, nil, cast[ptr wl_proxy](wl_region).get_version(), 0, x, y, width, height)
-proc subtract*(wl_region: ptr wl_region; x: int32; y: int32; width: int32; height: int32) {.inline.} =
+  cast[ptr Proxy](region).marshal_flags(RegionRequest_add.ord, nil, cast[ptr Proxy](region).get_version(), 0, x, y, width, height)
+proc subtract*(region: ptr Region; x: int32; y: int32; width: int32; height: int32) {.inline.} =
   ## subtract rectangle from region
   ## 
   ## Subtract the specified rectangle from the region.
   ## 
-  cast[ptr wl_proxy](wl_region).marshal_flags(wl_region_request_subtract.ord, nil, cast[ptr wl_proxy](wl_region).get_version(), 0, x, y, width, height)
-proc set_user_data*(wl_subcompositor: ptr wl_subcompositor; user_data: pointer) {.inline.} =
-  cast[ptr wl_proxy](wl_subcompositor).set_user_data(user_data)
-proc get_user_data*(wl_subcompositor: ptr wl_subcompositor): pointer {.inline.} =
-  cast[ptr wl_proxy](wl_subcompositor).get_user_data()
-proc get_version*(wl_subcompositor: ptr wl_subcompositor): uint32 {.inline.} =
-  cast[ptr wl_proxy](wl_subcompositor).get_version()
-proc destroy*(wl_subcompositor: ptr wl_subcompositor) {.inline.} =
+  cast[ptr Proxy](region).marshal_flags(RegionRequest_subtract.ord, nil, cast[ptr Proxy](region).get_version(), 0, x, y, width, height)
+proc setUserData*(subcompositor: ptr Subcompositor; userData: pointer) {.inline.} =
+  cast[ptr Proxy](subcompositor).set_user_data(user_data)
+proc getUserData*(subcompositor: ptr Subcompositor): pointer {.inline.} =
+  cast[ptr Proxy](subcompositor).get_user_data()
+proc getVersion*(subcompositor: ptr Subcompositor): uint32 {.inline.} =
+  cast[ptr Proxy](subcompositor).get_version()
+proc destroy*(subcompositor: ptr Subcompositor) {.inline.} =
   ## unbind from the subcompositor interface
   ## 
   ## Informs the server that the client will not be using this
   ## 	protocol object anymore. This does not affect any other
   ## 	objects, wl_subsurface objects included.
   ## 
-  cast[ptr wl_proxy](wl_subcompositor).marshal_flags(wl_subcompositor_request_destroy.ord, nil, cast[ptr wl_proxy](wl_subcompositor).get_version(), WL_MARSHAL_FLAG_DESTROY)
-proc get_subsurface*(wl_subcompositor: ptr wl_subcompositor; surface: ptr wl_surface; parent: ptr wl_surface): ptr wl_subsurface {.inline.} =
+  cast[ptr Proxy](subcompositor).marshal_flags(SubcompositorRequest_destroy.ord, nil, cast[ptr Proxy](subcompositor).get_version(), WL_MARSHAL_FLAG_DESTROY)
+proc getSubsurface*(subcompositor: ptr Subcompositor; surface: ptr Surface; parent: ptr Surface): ptr Subsurface {.inline.} =
   ## give a surface the role sub-surface
   ## 
   ## Create a sub-surface interface for the given surface, and
@@ -1604,14 +1604,14 @@ proc get_subsurface*(wl_subcompositor: ptr wl_subcompositor; surface: ptr wl_sur
   ## 	This request modifies the behaviour of wl_surface.commit request on
   ## 	the sub-surface, see the documentation on wl_subsurface interface.
   ## 
-  cast[ptr wl_subsurface](cast[ptr wl_proxy](wl_subcompositor).marshal_flags(wl_subcompositor_request_get_subsurface.ord, addr wl_subsurface_interface, cast[ptr wl_proxy](wl_subcompositor).get_version(), 0, nil, surface, parent))
-proc set_user_data*(wl_subsurface: ptr wl_subsurface; user_data: pointer) {.inline.} =
-  cast[ptr wl_proxy](wl_subsurface).set_user_data(user_data)
-proc get_user_data*(wl_subsurface: ptr wl_subsurface): pointer {.inline.} =
-  cast[ptr wl_proxy](wl_subsurface).get_user_data()
-proc get_version*(wl_subsurface: ptr wl_subsurface): uint32 {.inline.} =
-  cast[ptr wl_proxy](wl_subsurface).get_version()
-proc destroy*(wl_subsurface: ptr wl_subsurface) {.inline.} =
+  cast[ptr Subsurface](cast[ptr Proxy](subcompositor).marshal_flags(SubcompositorRequest_get_subsurface.ord, addr wl_subsurface_interface, cast[ptr Proxy](subcompositor).get_version(), 0, nil, surface, parent))
+proc setUserData*(subsurface: ptr Subsurface; userData: pointer) {.inline.} =
+  cast[ptr Proxy](subsurface).set_user_data(user_data)
+proc getUserData*(subsurface: ptr Subsurface): pointer {.inline.} =
+  cast[ptr Proxy](subsurface).get_user_data()
+proc getVersion*(subsurface: ptr Subsurface): uint32 {.inline.} =
+  cast[ptr Proxy](subsurface).get_version()
+proc destroy*(subsurface: ptr Subsurface) {.inline.} =
   ## remove sub-surface interface
   ## 
   ## The sub-surface interface is removed from the wl_surface object
@@ -1619,8 +1619,8 @@ proc destroy*(wl_subsurface: ptr wl_subsurface) {.inline.} =
   ## 	wl_subcompositor.get_subsurface request. The wl_surface's association
   ## 	to the parent is deleted. The wl_surface is unmapped immediately.
   ## 
-  cast[ptr wl_proxy](wl_subsurface).marshal_flags(wl_subsurface_request_destroy.ord, nil, cast[ptr wl_proxy](wl_subsurface).get_version(), WL_MARSHAL_FLAG_DESTROY)
-proc set_position*(wl_subsurface: ptr wl_subsurface; x: int32; y: int32) {.inline.} =
+  cast[ptr Proxy](subsurface).marshal_flags(SubsurfaceRequest_destroy.ord, nil, cast[ptr Proxy](subsurface).get_version(), WL_MARSHAL_FLAG_DESTROY)
+proc setPosition*(subsurface: ptr Subsurface; x: int32; y: int32) {.inline.} =
   ## reposition the sub-surface
   ## 
   ## This schedules a sub-surface position change.
@@ -1638,8 +1638,8 @@ proc set_position*(wl_subsurface: ptr wl_subsurface; x: int32; y: int32) {.inlin
   ## 
   ## 	The initial position is 0, 0.
   ## 
-  cast[ptr wl_proxy](wl_subsurface).marshal_flags(wl_subsurface_request_set_position.ord, nil, cast[ptr wl_proxy](wl_subsurface).get_version(), 0, x, y)
-proc place_above*(wl_subsurface: ptr wl_subsurface; sibling: ptr wl_surface) {.inline.} =
+  cast[ptr Proxy](subsurface).marshal_flags(SubsurfaceRequest_set_position.ord, nil, cast[ptr Proxy](subsurface).get_version(), 0, x, y)
+proc placeAbove*(subsurface: ptr Subsurface; sibling: ptr Surface) {.inline.} =
   ## restack the sub-surface
   ## 
   ## This sub-surface is taken from the stack, and put back just
@@ -1656,15 +1656,15 @@ proc place_above*(wl_subsurface: ptr wl_subsurface; sibling: ptr wl_surface) {.i
   ## 	A new sub-surface is initially added as the top-most in the stack
   ## 	of its siblings and parent.
   ## 
-  cast[ptr wl_proxy](wl_subsurface).marshal_flags(wl_subsurface_request_place_above.ord, nil, cast[ptr wl_proxy](wl_subsurface).get_version(), 0, sibling)
-proc place_below*(wl_subsurface: ptr wl_subsurface; sibling: ptr wl_surface) {.inline.} =
+  cast[ptr Proxy](subsurface).marshal_flags(SubsurfaceRequest_place_above.ord, nil, cast[ptr Proxy](subsurface).get_version(), 0, sibling)
+proc placeBelow*(subsurface: ptr Subsurface; sibling: ptr Surface) {.inline.} =
   ## restack the sub-surface
   ## 
   ## The sub-surface is placed just below the reference surface.
   ## 	See wl_subsurface.place_above.
   ## 
-  cast[ptr wl_proxy](wl_subsurface).marshal_flags(wl_subsurface_request_place_below.ord, nil, cast[ptr wl_proxy](wl_subsurface).get_version(), 0, sibling)
-proc set_sync*(wl_subsurface: ptr wl_subsurface) {.inline.} =
+  cast[ptr Proxy](subsurface).marshal_flags(SubsurfaceRequest_place_below.ord, nil, cast[ptr Proxy](subsurface).get_version(), 0, sibling)
+proc setSync*(subsurface: ptr Subsurface) {.inline.} =
   ## set sub-surface to synchronized mode
   ## 
   ## Change the commit behaviour of the sub-surface to synchronized
@@ -1681,8 +1681,8 @@ proc set_sync*(wl_subsurface: ptr wl_subsurface) {.inline.} =
   ## 
   ## 	See wl_subsurface for the recursive effect of this mode.
   ## 
-  cast[ptr wl_proxy](wl_subsurface).marshal_flags(wl_subsurface_request_set_sync.ord, nil, cast[ptr wl_proxy](wl_subsurface).get_version(), 0)
-proc set_desync*(wl_subsurface: ptr wl_subsurface) {.inline.} =
+  cast[ptr Proxy](subsurface).marshal_flags(SubsurfaceRequest_set_sync.ord, nil, cast[ptr Proxy](subsurface).get_version(), 0)
+proc setDesync*(subsurface: ptr Subsurface) {.inline.} =
   ## set sub-surface to desynchronized mode
   ## 
   ## Change the commit behaviour of the sub-surface to desynchronized
@@ -1705,4 +1705,4 @@ proc set_desync*(wl_subsurface: ptr wl_subsurface) {.inline.} =
   ## 	If a surface's parent surface behaves as desynchronized, then
   ## 	the cached state is applied on set_desync.
   ## 
-  cast[ptr wl_proxy](wl_subsurface).marshal_flags(wl_subsurface_request_set_desync.ord, nil, cast[ptr wl_proxy](wl_subsurface).get_version(), 0)
+  cast[ptr Proxy](subsurface).marshal_flags(SubsurfaceRequest_set_desync.ord, nil, cast[ptr Proxy](subsurface).get_version(), 0)

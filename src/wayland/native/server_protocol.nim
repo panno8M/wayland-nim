@@ -62,29 +62,47 @@ export protocol_code
 ## SOFTWARE.
 ## 
 
-type WlDisplayInterface* = object
+type DisplayInterface* = object
   sync*: proc(
-    client: ptr wl_client;
-    resource: ptr wl_resource;
+    client: ptr Client;
+    resource: ptr Resource;
     callback: uint32;
   ) {.nimcall.}
-  get_registry*: proc(
-    client: ptr wl_client;
-    resource: ptr wl_resource;
+  getRegistry*: proc(
+    client: ptr Client;
+    resource: ptr Resource;
     registry: uint32;
   ) {.nimcall.}
 
-type WlRegistryInterface* = object
+proc displaySendError*(resource: ptr Resource; objectId: ptr Resource; code: uint32; message: cstring) {.inline, exportc: "wl_display_send_error".} =
+  ## Sends an error event to the client owning the resource.
+  ## 
+  ## **params**:
+  ## * *resource*: The client's resource
+  ## * *object_id*: object where the error occurred
+  ## * *code*: error code
+  ## * *message*: error description
+  resource.post_event(DisplayEvent_error.ord, objectId, code, message)
+
+proc displaySendDeleteId*(resource: ptr Resource; id: uint32) {.inline, exportc: "wl_display_send_delete_id".} =
+  ## Sends an delete_id event to the client owning the resource.
+  ## 
+  ## **params**:
+  ## * *resource*: The client's resource
+  ## * *id*: deleted object ID
+  resource.post_event(DisplayEvent_delete_id.ord, id)
+
+type RegistryInterface* = object
   `bind`*: proc(
-    client: ptr wl_client;
-    resource: ptr wl_resource;
+    client: ptr Client;
+    resource: ptr Resource;
     name: uint32;
     ifce: cstring;
     version: uint32;
     id: uint32;
   ) {.nimcall.}
 
-proc wl_registry_send_global*(resource: ptr wl_resource; name: uint32; `interface`: cstring; version: uint32) {.inline, exportc: "wl_registry_send_global".} =
+proc registrySendGlobal*(resource: ptr Resource; name: uint32; `interface`: cstring; version: uint32) {.inline, exportc: "wl_registry_send_global".} =
   ## Sends an global event to the client owning the resource.
   ## 
   ## **params**:
@@ -92,40 +110,40 @@ proc wl_registry_send_global*(resource: ptr wl_resource; name: uint32; `interfac
   ## * *name*: numeric name of the global object
   ## * *interface*: interface implemented by the object
   ## * *version*: interface version
-  resource.post_event(wl_registry_event_global.ord, name, `interface`, version)
+  resource.post_event(RegistryEvent_global.ord, name, `interface`, version)
 
-proc wl_registry_send_global_remove*(resource: ptr wl_resource; name: uint32) {.inline, exportc: "wl_registry_send_global_remove".} =
+proc registrySendGlobalRemove*(resource: ptr Resource; name: uint32) {.inline, exportc: "wl_registry_send_global_remove".} =
   ## Sends an global_remove event to the client owning the resource.
   ## 
   ## **params**:
   ## * *resource*: The client's resource
   ## * *name*: numeric name of the global object
-  resource.post_event(wl_registry_event_global_remove.ord, name)
+  resource.post_event(RegistryEvent_global_remove.ord, name)
 
-proc wl_callback_send_done*(resource: ptr wl_resource; callback_data: uint32) {.inline, exportc: "wl_callback_send_done".} =
+proc callbackSendDone*(resource: ptr Resource; callbackData: uint32) {.inline, exportc: "wl_callback_send_done".} =
   ## Sends an done event to the client owning the resource.
   ## 
   ## **params**:
   ## * *resource*: The client's resource
   ## * *callback_data*: request-specific data for the callback
-  resource.post_event(wl_callback_event_done.ord, callback_data)
+  resource.post_event(CallbackEvent_done.ord, callbackData)
 
-type WlCompositorInterface* = object
-  create_surface*: proc(
-    client: ptr wl_client;
-    resource: ptr wl_resource;
+type CompositorInterface* = object
+  createSurface*: proc(
+    client: ptr Client;
+    resource: ptr Resource;
     id: uint32;
   ) {.nimcall.}
-  create_region*: proc(
-    client: ptr wl_client;
-    resource: ptr wl_resource;
+  createRegion*: proc(
+    client: ptr Client;
+    resource: ptr Resource;
     id: uint32;
   ) {.nimcall.}
 
-type WlShmPoolInterface* = object
-  create_buffer*: proc(
-    client: ptr wl_client;
-    resource: ptr wl_resource;
+type ShmPoolInterface* = object
+  createBuffer*: proc(
+    client: ptr Client;
+    resource: ptr Resource;
     id: uint32;
     offset: int32;
     width: int32;
@@ -134,192 +152,192 @@ type WlShmPoolInterface* = object
     format: uint32;
   ) {.nimcall.}
   destroy*: proc(
-    client: ptr wl_client;
-    resource: ptr wl_resource;
+    client: ptr Client;
+    resource: ptr Resource;
   ) {.nimcall.}
   resize*: proc(
-    client: ptr wl_client;
-    resource: ptr wl_resource;
+    client: ptr Client;
+    resource: ptr Resource;
     size: int32;
   ) {.nimcall.}
 
-type WlShmInterface* = object
-  create_pool*: proc(
-    client: ptr wl_client;
-    resource: ptr wl_resource;
+type ShmInterface* = object
+  createPool*: proc(
+    client: ptr Client;
+    resource: ptr Resource;
     id: uint32;
     fd: int32;
     size: int32;
   ) {.nimcall.}
   release*: proc(
-    client: ptr wl_client;
-    resource: ptr wl_resource;
+    client: ptr Client;
+    resource: ptr Resource;
   ) {.nimcall.}
 
-proc wl_shm_send_format*(resource: ptr wl_resource; format: uint32) {.inline, exportc: "wl_shm_send_format".} =
+proc shmSendFormat*(resource: ptr Resource; format: uint32) {.inline, exportc: "wl_shm_send_format".} =
   ## Sends an format event to the client owning the resource.
   ## 
   ## **params**:
   ## * *resource*: The client's resource
   ## * *format*: buffer pixel format
-  resource.post_event(wl_shm_event_format.ord, format)
+  resource.post_event(ShmEvent_format.ord, format)
 
-type WlBufferInterface* = object
+type BufferInterface* = object
   destroy*: proc(
-    client: ptr wl_client;
-    resource: ptr wl_resource;
+    client: ptr Client;
+    resource: ptr Resource;
   ) {.nimcall.}
 
-proc wl_buffer_send_release*(resource: ptr wl_resource) {.inline, exportc: "wl_buffer_send_release".} =
+proc bufferSendRelease*(resource: ptr Resource) {.inline, exportc: "wl_buffer_send_release".} =
   ## Sends an release event to the client owning the resource.
   ## 
   ## **params**:
   ## * *resource*: The client's resource
-  resource.post_event(wl_buffer_event_release.ord)
+  resource.post_event(BufferEvent_release.ord)
 
-type WlDataOfferInterface* = object
+type DataOfferInterface* = object
   accept*: proc(
-    client: ptr wl_client;
-    resource: ptr wl_resource;
+    client: ptr Client;
+    resource: ptr Resource;
     serial: uint32;
-    mime_type: cstring;
+    mimeType: cstring;
   ) {.nimcall.}
   receive*: proc(
-    client: ptr wl_client;
-    resource: ptr wl_resource;
-    mime_type: cstring;
+    client: ptr Client;
+    resource: ptr Resource;
+    mimeType: cstring;
     fd: int32;
   ) {.nimcall.}
   destroy*: proc(
-    client: ptr wl_client;
-    resource: ptr wl_resource;
+    client: ptr Client;
+    resource: ptr Resource;
   ) {.nimcall.}
   finish*: proc(
-    client: ptr wl_client;
-    resource: ptr wl_resource;
+    client: ptr Client;
+    resource: ptr Resource;
   ) {.nimcall.}
-  set_actions*: proc(
-    client: ptr wl_client;
-    resource: ptr wl_resource;
-    dnd_actions: uint32;
-    preferred_action: uint32;
+  setActions*: proc(
+    client: ptr Client;
+    resource: ptr Resource;
+    dndActions: uint32;
+    preferredAction: uint32;
   ) {.nimcall.}
 
-proc wl_data_offer_send_offer*(resource: ptr wl_resource; mime_type: cstring) {.inline, exportc: "wl_data_offer_send_offer".} =
+proc dataOfferSendOffer*(resource: ptr Resource; mimeType: cstring) {.inline, exportc: "wl_data_offer_send_offer".} =
   ## Sends an offer event to the client owning the resource.
   ## 
   ## **params**:
   ## * *resource*: The client's resource
   ## * *mime_type*: offered mime type
-  resource.post_event(wl_data_offer_event_offer.ord, mime_type)
+  resource.post_event(DataOfferEvent_offer.ord, mimeType)
 
-proc wl_data_offer_send_source_actions*(resource: ptr wl_resource; source_actions: uint32) {.inline, exportc: "wl_data_offer_send_source_actions".} =
+proc dataOfferSendSourceActions*(resource: ptr Resource; sourceActions: uint32) {.inline, exportc: "wl_data_offer_send_source_actions".} =
   ## Sends an source_actions event to the client owning the resource.
   ## 
   ## **params**:
   ## * *resource*: The client's resource
   ## * *source_actions*: actions offered by the data source
-  resource.post_event(wl_data_offer_event_source_actions.ord, source_actions)
+  resource.post_event(DataOfferEvent_source_actions.ord, sourceActions)
 
-proc wl_data_offer_send_action*(resource: ptr wl_resource; dnd_action: uint32) {.inline, exportc: "wl_data_offer_send_action".} =
+proc dataOfferSendAction*(resource: ptr Resource; dndAction: uint32) {.inline, exportc: "wl_data_offer_send_action".} =
   ## Sends an action event to the client owning the resource.
   ## 
   ## **params**:
   ## * *resource*: The client's resource
   ## * *dnd_action*: action selected by the compositor
-  resource.post_event(wl_data_offer_event_action.ord, dnd_action)
+  resource.post_event(DataOfferEvent_action.ord, dndAction)
 
-type WlDataSourceInterface* = object
+type DataSourceInterface* = object
   offer*: proc(
-    client: ptr wl_client;
-    resource: ptr wl_resource;
-    mime_type: cstring;
+    client: ptr Client;
+    resource: ptr Resource;
+    mimeType: cstring;
   ) {.nimcall.}
   destroy*: proc(
-    client: ptr wl_client;
-    resource: ptr wl_resource;
+    client: ptr Client;
+    resource: ptr Resource;
   ) {.nimcall.}
-  set_actions*: proc(
-    client: ptr wl_client;
-    resource: ptr wl_resource;
-    dnd_actions: uint32;
+  setActions*: proc(
+    client: ptr Client;
+    resource: ptr Resource;
+    dndActions: uint32;
   ) {.nimcall.}
 
-proc wl_data_source_send_target*(resource: ptr wl_resource; mime_type: cstring) {.inline, exportc: "wl_data_source_send_target".} =
+proc dataSourceSendTarget*(resource: ptr Resource; mimeType: cstring) {.inline, exportc: "wl_data_source_send_target".} =
   ## Sends an target event to the client owning the resource.
   ## 
   ## **params**:
   ## * *resource*: The client's resource
   ## * *mime_type*: mime type accepted by the target
-  resource.post_event(wl_data_source_event_target.ord, mime_type)
+  resource.post_event(DataSourceEvent_target.ord, mimeType)
 
-proc wl_data_source_send_send*(resource: ptr wl_resource; mime_type: cstring; fd: int32) {.inline, exportc: "wl_data_source_send_send".} =
+proc dataSourceSendSend*(resource: ptr Resource; mimeType: cstring; fd: int32) {.inline, exportc: "wl_data_source_send_send".} =
   ## Sends an send event to the client owning the resource.
   ## 
   ## **params**:
   ## * *resource*: The client's resource
   ## * *mime_type*: mime type for the data
   ## * *fd*: file descriptor for the data
-  resource.post_event(wl_data_source_event_send.ord, mime_type, fd)
+  resource.post_event(DataSourceEvent_send.ord, mimeType, fd)
 
-proc wl_data_source_send_cancelled*(resource: ptr wl_resource) {.inline, exportc: "wl_data_source_send_cancelled".} =
+proc dataSourceSendCancelled*(resource: ptr Resource) {.inline, exportc: "wl_data_source_send_cancelled".} =
   ## Sends an cancelled event to the client owning the resource.
   ## 
   ## **params**:
   ## * *resource*: The client's resource
-  resource.post_event(wl_data_source_event_cancelled.ord)
+  resource.post_event(DataSourceEvent_cancelled.ord)
 
-proc wl_data_source_send_dnd_drop_performed*(resource: ptr wl_resource) {.inline, exportc: "wl_data_source_send_dnd_drop_performed".} =
+proc dataSourceSendDndDropPerformed*(resource: ptr Resource) {.inline, exportc: "wl_data_source_send_dnd_drop_performed".} =
   ## Sends an dnd_drop_performed event to the client owning the resource.
   ## 
   ## **params**:
   ## * *resource*: The client's resource
-  resource.post_event(wl_data_source_event_dnd_drop_performed.ord)
+  resource.post_event(DataSourceEvent_dnd_drop_performed.ord)
 
-proc wl_data_source_send_dnd_finished*(resource: ptr wl_resource) {.inline, exportc: "wl_data_source_send_dnd_finished".} =
+proc dataSourceSendDndFinished*(resource: ptr Resource) {.inline, exportc: "wl_data_source_send_dnd_finished".} =
   ## Sends an dnd_finished event to the client owning the resource.
   ## 
   ## **params**:
   ## * *resource*: The client's resource
-  resource.post_event(wl_data_source_event_dnd_finished.ord)
+  resource.post_event(DataSourceEvent_dnd_finished.ord)
 
-proc wl_data_source_send_action*(resource: ptr wl_resource; dnd_action: uint32) {.inline, exportc: "wl_data_source_send_action".} =
+proc dataSourceSendAction*(resource: ptr Resource; dndAction: uint32) {.inline, exportc: "wl_data_source_send_action".} =
   ## Sends an action event to the client owning the resource.
   ## 
   ## **params**:
   ## * *resource*: The client's resource
   ## * *dnd_action*: action selected by the compositor
-  resource.post_event(wl_data_source_event_action.ord, dnd_action)
+  resource.post_event(DataSourceEvent_action.ord, dndAction)
 
-type WlDataDeviceInterface* = object
-  start_drag*: proc(
-    client: ptr wl_client;
-    resource: ptr wl_resource;
-    source: ptr wl_resource;
-    origin: ptr wl_resource;
-    icon: ptr wl_resource;
+type DataDeviceInterface* = object
+  startDrag*: proc(
+    client: ptr Client;
+    resource: ptr Resource;
+    source: ptr Resource;
+    origin: ptr Resource;
+    icon: ptr Resource;
     serial: uint32;
   ) {.nimcall.}
-  set_selection*: proc(
-    client: ptr wl_client;
-    resource: ptr wl_resource;
-    source: ptr wl_resource;
+  setSelection*: proc(
+    client: ptr Client;
+    resource: ptr Resource;
+    source: ptr Resource;
     serial: uint32;
   ) {.nimcall.}
   release*: proc(
-    client: ptr wl_client;
-    resource: ptr wl_resource;
+    client: ptr Client;
+    resource: ptr Resource;
   ) {.nimcall.}
 
-proc wl_data_device_send_data_offer*(resource: ptr wl_resource; id: ptr wl_resource) {.inline, exportc: "wl_data_device_send_data_offer".} =
+proc dataDeviceSendDataOffer*(resource: ptr Resource; id: ptr Resource) {.inline, exportc: "wl_data_device_send_data_offer".} =
   ## Sends an data_offer event to the client owning the resource.
   ## 
   ## **params**:
   ## * *resource*: The client's resource
   ## * *id*: the new data_offer object
-  resource.post_event(wl_data_device_event_data_offer.ord, id)
+  resource.post_event(DataDeviceEvent_data_offer.ord, id)
 
-proc wl_data_device_send_enter*(resource: ptr wl_resource; serial: uint32; surface: ptr wl_resource; x: wl_fixed_t; y: wl_fixed_t; id: ptr wl_resource) {.inline, exportc: "wl_data_device_send_enter".} =
+proc dataDeviceSendEnter*(resource: ptr Resource; serial: uint32; surface: ptr Resource; x: Fixed; y: Fixed; id: ptr Resource) {.inline, exportc: "wl_data_device_send_enter".} =
   ## Sends an enter event to the client owning the resource.
   ## 
   ## **params**:
@@ -329,16 +347,16 @@ proc wl_data_device_send_enter*(resource: ptr wl_resource; serial: uint32; surfa
   ## * *x*: surface-local x coordinate
   ## * *y*: surface-local y coordinate
   ## * *id*: source data_offer object
-  resource.post_event(wl_data_device_event_enter.ord, serial, surface, x, y, id)
+  resource.post_event(DataDeviceEvent_enter.ord, serial, surface, x, y, id)
 
-proc wl_data_device_send_leave*(resource: ptr wl_resource) {.inline, exportc: "wl_data_device_send_leave".} =
+proc dataDeviceSendLeave*(resource: ptr Resource) {.inline, exportc: "wl_data_device_send_leave".} =
   ## Sends an leave event to the client owning the resource.
   ## 
   ## **params**:
   ## * *resource*: The client's resource
-  resource.post_event(wl_data_device_event_leave.ord)
+  resource.post_event(DataDeviceEvent_leave.ord)
 
-proc wl_data_device_send_motion*(resource: ptr wl_resource; time: uint32; x: wl_fixed_t; y: wl_fixed_t) {.inline, exportc: "wl_data_device_send_motion".} =
+proc dataDeviceSendMotion*(resource: ptr Resource; time: uint32; x: Fixed; y: Fixed) {.inline, exportc: "wl_data_device_send_motion".} =
   ## Sends an motion event to the client owning the resource.
   ## 
   ## **params**:
@@ -346,117 +364,117 @@ proc wl_data_device_send_motion*(resource: ptr wl_resource; time: uint32; x: wl_
   ## * *time*: timestamp with millisecond granularity
   ## * *x*: surface-local x coordinate
   ## * *y*: surface-local y coordinate
-  resource.post_event(wl_data_device_event_motion.ord, time, x, y)
+  resource.post_event(DataDeviceEvent_motion.ord, time, x, y)
 
-proc wl_data_device_send_drop*(resource: ptr wl_resource) {.inline, exportc: "wl_data_device_send_drop".} =
+proc dataDeviceSendDrop*(resource: ptr Resource) {.inline, exportc: "wl_data_device_send_drop".} =
   ## Sends an drop event to the client owning the resource.
   ## 
   ## **params**:
   ## * *resource*: The client's resource
-  resource.post_event(wl_data_device_event_drop.ord)
+  resource.post_event(DataDeviceEvent_drop.ord)
 
-proc wl_data_device_send_selection*(resource: ptr wl_resource; id: ptr wl_resource) {.inline, exportc: "wl_data_device_send_selection".} =
+proc dataDeviceSendSelection*(resource: ptr Resource; id: ptr Resource) {.inline, exportc: "wl_data_device_send_selection".} =
   ## Sends an selection event to the client owning the resource.
   ## 
   ## **params**:
   ## * *resource*: The client's resource
   ## * *id*: selection data_offer object
-  resource.post_event(wl_data_device_event_selection.ord, id)
+  resource.post_event(DataDeviceEvent_selection.ord, id)
 
-type WlDataDeviceManagerInterface* = object
-  create_data_source*: proc(
-    client: ptr wl_client;
-    resource: ptr wl_resource;
+type DataDeviceManagerInterface* = object
+  createDataSource*: proc(
+    client: ptr Client;
+    resource: ptr Resource;
     id: uint32;
   ) {.nimcall.}
-  get_data_device*: proc(
-    client: ptr wl_client;
-    resource: ptr wl_resource;
+  getDataDevice*: proc(
+    client: ptr Client;
+    resource: ptr Resource;
     id: uint32;
-    seat: ptr wl_resource;
+    seat: ptr Resource;
   ) {.nimcall.}
 
-type WlShellInterface* = object
-  get_shell_surface*: proc(
-    client: ptr wl_client;
-    resource: ptr wl_resource;
+type ShellInterface* = object
+  getShellSurface*: proc(
+    client: ptr Client;
+    resource: ptr Resource;
     id: uint32;
-    surface: ptr wl_resource;
+    surface: ptr Resource;
   ) {.nimcall.}
 
-type WlShellSurfaceInterface* = object
+type ShellSurfaceInterface* = object
   pong*: proc(
-    client: ptr wl_client;
-    resource: ptr wl_resource;
+    client: ptr Client;
+    resource: ptr Resource;
     serial: uint32;
   ) {.nimcall.}
   move*: proc(
-    client: ptr wl_client;
-    resource: ptr wl_resource;
-    seat: ptr wl_resource;
+    client: ptr Client;
+    resource: ptr Resource;
+    seat: ptr Resource;
     serial: uint32;
   ) {.nimcall.}
   resize*: proc(
-    client: ptr wl_client;
-    resource: ptr wl_resource;
-    seat: ptr wl_resource;
+    client: ptr Client;
+    resource: ptr Resource;
+    seat: ptr Resource;
     serial: uint32;
     edges: uint32;
   ) {.nimcall.}
-  set_toplevel*: proc(
-    client: ptr wl_client;
-    resource: ptr wl_resource;
+  setToplevel*: proc(
+    client: ptr Client;
+    resource: ptr Resource;
   ) {.nimcall.}
-  set_transient*: proc(
-    client: ptr wl_client;
-    resource: ptr wl_resource;
-    parent: ptr wl_resource;
+  setTransient*: proc(
+    client: ptr Client;
+    resource: ptr Resource;
+    parent: ptr Resource;
     x: int32;
     y: int32;
     flags: uint32;
   ) {.nimcall.}
-  set_fullscreen*: proc(
-    client: ptr wl_client;
-    resource: ptr wl_resource;
+  setFullscreen*: proc(
+    client: ptr Client;
+    resource: ptr Resource;
     `method`: uint32;
     framerate: uint32;
-    output: ptr wl_resource;
+    output: ptr Resource;
   ) {.nimcall.}
-  set_popup*: proc(
-    client: ptr wl_client;
-    resource: ptr wl_resource;
-    seat: ptr wl_resource;
+  setPopup*: proc(
+    client: ptr Client;
+    resource: ptr Resource;
+    seat: ptr Resource;
     serial: uint32;
-    parent: ptr wl_resource;
+    parent: ptr Resource;
     x: int32;
     y: int32;
     flags: uint32;
   ) {.nimcall.}
-  set_maximized*: proc(
-    client: ptr wl_client;
-    resource: ptr wl_resource;
-    output: ptr wl_resource;
+  setMaximized*: proc(
+    client: ptr Client;
+    resource: ptr Resource;
+    output: ptr Resource;
   ) {.nimcall.}
-  set_title*: proc(
-    client: ptr wl_client;
-    resource: ptr wl_resource;
+  setTitle*: proc(
+    client: ptr Client;
+    resource: ptr Resource;
     title: cstring;
   ) {.nimcall.}
-  set_class*: proc(
-    client: ptr wl_client;
-    resource: ptr wl_resource;
+  setClass*: proc(
+    client: ptr Client;
+    resource: ptr Resource;
     class: cstring;
   ) {.nimcall.}
 
-proc wl_shell_surface_send_ping*(resource: ptr wl_resource; serial: uint32) {.inline, exportc: "wl_shell_surface_send_ping".} =
+proc shellSurfaceSendPing*(resource: ptr Resource; serial: uint32) {.inline, exportc: "wl_shell_surface_send_ping".} =
   ## Sends an ping event to the client owning the resource.
   ## 
   ## **params**:
   ## * *resource*: The client's resource
   ## * *serial*: serial number of the ping
-  resource.post_event(wl_shell_surface_event_ping.ord, serial)
+  resource.post_event(ShellSurfaceEvent_ping.ord, serial)
 
-proc wl_shell_surface_send_configure*(resource: ptr wl_resource; edges: uint32; width: int32; height: int32) {.inline, exportc: "wl_shell_surface_send_configure".} =
+proc shellSurfaceSendConfigure*(resource: ptr Resource; edges: uint32; width: int32; height: int32) {.inline, exportc: "wl_shell_surface_send_configure".} =
   ## Sends an configure event to the client owning the resource.
   ## 
   ## **params**:
@@ -464,163 +482,163 @@ proc wl_shell_surface_send_configure*(resource: ptr wl_resource; edges: uint32; 
   ## * *edges*: how the surface was resized
   ## * *width*: new width of the surface
   ## * *height*: new height of the surface
-  resource.post_event(wl_shell_surface_event_configure.ord, edges, width, height)
+  resource.post_event(ShellSurfaceEvent_configure.ord, edges, width, height)
 
-proc wl_shell_surface_send_popup_done*(resource: ptr wl_resource) {.inline, exportc: "wl_shell_surface_send_popup_done".} =
+proc shellSurfaceSendPopupDone*(resource: ptr Resource) {.inline, exportc: "wl_shell_surface_send_popup_done".} =
   ## Sends an popup_done event to the client owning the resource.
   ## 
   ## **params**:
   ## * *resource*: The client's resource
-  resource.post_event(wl_shell_surface_event_popup_done.ord)
+  resource.post_event(ShellSurfaceEvent_popup_done.ord)
 
-type WlSurfaceInterface* = object
+type SurfaceInterface* = object
   destroy*: proc(
-    client: ptr wl_client;
-    resource: ptr wl_resource;
+    client: ptr Client;
+    resource: ptr Resource;
   ) {.nimcall.}
   attach*: proc(
-    client: ptr wl_client;
-    resource: ptr wl_resource;
-    buffer: ptr wl_resource;
+    client: ptr Client;
+    resource: ptr Resource;
+    buffer: ptr Resource;
     x: int32;
     y: int32;
   ) {.nimcall.}
   damage*: proc(
-    client: ptr wl_client;
-    resource: ptr wl_resource;
+    client: ptr Client;
+    resource: ptr Resource;
     x: int32;
     y: int32;
     width: int32;
     height: int32;
   ) {.nimcall.}
   frame*: proc(
-    client: ptr wl_client;
-    resource: ptr wl_resource;
+    client: ptr Client;
+    resource: ptr Resource;
     callback: uint32;
   ) {.nimcall.}
-  set_opaque_region*: proc(
-    client: ptr wl_client;
-    resource: ptr wl_resource;
-    region: ptr wl_resource;
+  setOpaqueRegion*: proc(
+    client: ptr Client;
+    resource: ptr Resource;
+    region: ptr Resource;
   ) {.nimcall.}
-  set_input_region*: proc(
-    client: ptr wl_client;
-    resource: ptr wl_resource;
-    region: ptr wl_resource;
+  setInputRegion*: proc(
+    client: ptr Client;
+    resource: ptr Resource;
+    region: ptr Resource;
   ) {.nimcall.}
   commit*: proc(
-    client: ptr wl_client;
-    resource: ptr wl_resource;
+    client: ptr Client;
+    resource: ptr Resource;
   ) {.nimcall.}
-  set_buffer_transform*: proc(
-    client: ptr wl_client;
-    resource: ptr wl_resource;
+  setBufferTransform*: proc(
+    client: ptr Client;
+    resource: ptr Resource;
     transform: int32;
   ) {.nimcall.}
-  set_buffer_scale*: proc(
-    client: ptr wl_client;
-    resource: ptr wl_resource;
+  setBufferScale*: proc(
+    client: ptr Client;
+    resource: ptr Resource;
     scale: int32;
   ) {.nimcall.}
-  damage_buffer*: proc(
-    client: ptr wl_client;
-    resource: ptr wl_resource;
+  damageBuffer*: proc(
+    client: ptr Client;
+    resource: ptr Resource;
     x: int32;
     y: int32;
     width: int32;
     height: int32;
   ) {.nimcall.}
   offset*: proc(
-    client: ptr wl_client;
-    resource: ptr wl_resource;
+    client: ptr Client;
+    resource: ptr Resource;
     x: int32;
     y: int32;
   ) {.nimcall.}
 
-proc wl_surface_send_enter*(resource: ptr wl_resource; output: ptr wl_resource) {.inline, exportc: "wl_surface_send_enter".} =
+proc surfaceSendEnter*(resource: ptr Resource; output: ptr Resource) {.inline, exportc: "wl_surface_send_enter".} =
   ## Sends an enter event to the client owning the resource.
   ## 
   ## **params**:
   ## * *resource*: The client's resource
   ## * *output*: output entered by the surface
-  resource.post_event(wl_surface_event_enter.ord, output)
+  resource.post_event(SurfaceEvent_enter.ord, output)
 
-proc wl_surface_send_leave*(resource: ptr wl_resource; output: ptr wl_resource) {.inline, exportc: "wl_surface_send_leave".} =
+proc surfaceSendLeave*(resource: ptr Resource; output: ptr Resource) {.inline, exportc: "wl_surface_send_leave".} =
   ## Sends an leave event to the client owning the resource.
   ## 
   ## **params**:
   ## * *resource*: The client's resource
   ## * *output*: output left by the surface
-  resource.post_event(wl_surface_event_leave.ord, output)
+  resource.post_event(SurfaceEvent_leave.ord, output)
 
-proc wl_surface_send_preferred_buffer_scale*(resource: ptr wl_resource; factor: int32) {.inline, exportc: "wl_surface_send_preferred_buffer_scale".} =
+proc surfaceSendPreferredBufferScale*(resource: ptr Resource; factor: int32) {.inline, exportc: "wl_surface_send_preferred_buffer_scale".} =
   ## Sends an preferred_buffer_scale event to the client owning the resource.
   ## 
   ## **params**:
   ## * *resource*: The client's resource
   ## * *factor*: preferred scaling factor
-  resource.post_event(wl_surface_event_preferred_buffer_scale.ord, factor)
+  resource.post_event(SurfaceEvent_preferred_buffer_scale.ord, factor)
 
-proc wl_surface_send_preferred_buffer_transform*(resource: ptr wl_resource; transform: uint32) {.inline, exportc: "wl_surface_send_preferred_buffer_transform".} =
+proc surfaceSendPreferredBufferTransform*(resource: ptr Resource; transform: uint32) {.inline, exportc: "wl_surface_send_preferred_buffer_transform".} =
   ## Sends an preferred_buffer_transform event to the client owning the resource.
   ## 
   ## **params**:
   ## * *resource*: The client's resource
   ## * *transform*: preferred transform
-  resource.post_event(wl_surface_event_preferred_buffer_transform.ord, transform)
+  resource.post_event(SurfaceEvent_preferred_buffer_transform.ord, transform)
 
-type WlSeatInterface* = object
-  get_pointer*: proc(
-    client: ptr wl_client;
-    resource: ptr wl_resource;
+type SeatInterface* = object
+  getPointer*: proc(
+    client: ptr Client;
+    resource: ptr Resource;
     id: uint32;
   ) {.nimcall.}
-  get_keyboard*: proc(
-    client: ptr wl_client;
-    resource: ptr wl_resource;
+  getKeyboard*: proc(
+    client: ptr Client;
+    resource: ptr Resource;
     id: uint32;
   ) {.nimcall.}
-  get_touch*: proc(
-    client: ptr wl_client;
-    resource: ptr wl_resource;
+  getTouch*: proc(
+    client: ptr Client;
+    resource: ptr Resource;
     id: uint32;
   ) {.nimcall.}
   release*: proc(
-    client: ptr wl_client;
-    resource: ptr wl_resource;
+    client: ptr Client;
+    resource: ptr Resource;
   ) {.nimcall.}
 
-proc wl_seat_send_capabilities*(resource: ptr wl_resource; capabilities: uint32) {.inline, exportc: "wl_seat_send_capabilities".} =
+proc seatSendCapabilities*(resource: ptr Resource; capabilities: uint32) {.inline, exportc: "wl_seat_send_capabilities".} =
   ## Sends an capabilities event to the client owning the resource.
   ## 
   ## **params**:
   ## * *resource*: The client's resource
   ## * *capabilities*: capabilities of the seat
-  resource.post_event(wl_seat_event_capabilities.ord, capabilities)
+  resource.post_event(SeatEvent_capabilities.ord, capabilities)
 
-proc wl_seat_send_name*(resource: ptr wl_resource; name: cstring) {.inline, exportc: "wl_seat_send_name".} =
+proc seatSendName*(resource: ptr Resource; name: cstring) {.inline, exportc: "wl_seat_send_name".} =
   ## Sends an name event to the client owning the resource.
   ## 
   ## **params**:
   ## * *resource*: The client's resource
   ## * *name*: seat identifier
-  resource.post_event(wl_seat_event_name.ord, name)
+  resource.post_event(SeatEvent_name.ord, name)
 
-type WlPointerInterface* = object
-  set_cursor*: proc(
-    client: ptr wl_client;
-    resource: ptr wl_resource;
+type PointerInterface* = object
+  setCursor*: proc(
+    client: ptr Client;
+    resource: ptr Resource;
     serial: uint32;
-    surface: ptr wl_resource;
-    hotspot_x: int32;
-    hotspot_y: int32;
+    surface: ptr Resource;
+    hotspotX: int32;
+    hotspotY: int32;
   ) {.nimcall.}
   release*: proc(
-    client: ptr wl_client;
-    resource: ptr wl_resource;
+    client: ptr Client;
+    resource: ptr Resource;
   ) {.nimcall.}
 
-proc wl_pointer_send_enter*(resource: ptr wl_resource; serial: uint32; surface: ptr wl_resource; surface_x: wl_fixed_t; surface_y: wl_fixed_t) {.inline, exportc: "wl_pointer_send_enter".} =
+proc pointerSendEnter*(resource: ptr Resource; serial: uint32; surface: ptr Resource; surfaceX: Fixed; surfaceY: Fixed) {.inline, exportc: "wl_pointer_send_enter".} =
   ## Sends an enter event to the client owning the resource.
   ## 
   ## **params**:
@@ -629,18 +647,18 @@ proc wl_pointer_send_enter*(resource: ptr wl_resource; serial: uint32; surface: 
   ## * *surface*: surface entered by the pointer
   ## * *surface_x*: surface-local x coordinate
   ## * *surface_y*: surface-local y coordinate
-  resource.post_event(wl_pointer_event_enter.ord, serial, surface, surface_x, surface_y)
+  resource.post_event(PointerEvent_enter.ord, serial, surface, surfaceX, surfaceY)
 
-proc wl_pointer_send_leave*(resource: ptr wl_resource; serial: uint32; surface: ptr wl_resource) {.inline, exportc: "wl_pointer_send_leave".} =
+proc pointerSendLeave*(resource: ptr Resource; serial: uint32; surface: ptr Resource) {.inline, exportc: "wl_pointer_send_leave".} =
   ## Sends an leave event to the client owning the resource.
   ## 
   ## **params**:
   ## * *resource*: The client's resource
   ## * *serial*: serial number of the leave event
   ## * *surface*: surface left by the pointer
-  resource.post_event(wl_pointer_event_leave.ord, serial, surface)
+  resource.post_event(PointerEvent_leave.ord, serial, surface)
 
-proc wl_pointer_send_motion*(resource: ptr wl_resource; time: uint32; surface_x: wl_fixed_t; surface_y: wl_fixed_t) {.inline, exportc: "wl_pointer_send_motion".} =
+proc pointerSendMotion*(resource: ptr Resource; time: uint32; surfaceX: Fixed; surfaceY: Fixed) {.inline, exportc: "wl_pointer_send_motion".} =
   ## Sends an motion event to the client owning the resource.
   ## 
   ## **params**:
@@ -648,9 +666,9 @@ proc wl_pointer_send_motion*(resource: ptr wl_resource; time: uint32; surface_x:
   ## * *time*: timestamp with millisecond granularity
   ## * *surface_x*: surface-local x coordinate
   ## * *surface_y*: surface-local y coordinate
-  resource.post_event(wl_pointer_event_motion.ord, time, surface_x, surface_y)
+  resource.post_event(PointerEvent_motion.ord, time, surfaceX, surfaceY)
 
-proc wl_pointer_send_button*(resource: ptr wl_resource; serial: uint32; time: uint32; button: uint32; state: uint32) {.inline, exportc: "wl_pointer_send_button".} =
+proc pointerSendButton*(resource: ptr Resource; serial: uint32; time: uint32; button: uint32; state: uint32) {.inline, exportc: "wl_pointer_send_button".} =
   ## Sends an button event to the client owning the resource.
   ## 
   ## **params**:
@@ -659,9 +677,9 @@ proc wl_pointer_send_button*(resource: ptr wl_resource; serial: uint32; time: ui
   ## * *time*: timestamp with millisecond granularity
   ## * *button*: button that produced the event
   ## * *state*: physical state of the button
-  resource.post_event(wl_pointer_event_button.ord, serial, time, button, state)
+  resource.post_event(PointerEvent_button.ord, serial, time, button, state)
 
-proc wl_pointer_send_axis*(resource: ptr wl_resource; time: uint32; axis: uint32; value: wl_fixed_t) {.inline, exportc: "wl_pointer_send_axis".} =
+proc pointerSendAxis*(resource: ptr Resource; time: uint32; axis: uint32; value: Fixed) {.inline, exportc: "wl_pointer_send_axis".} =
   ## Sends an axis event to the client owning the resource.
   ## 
   ## **params**:
@@ -669,66 +687,66 @@ proc wl_pointer_send_axis*(resource: ptr wl_resource; time: uint32; axis: uint32
   ## * *time*: timestamp with millisecond granularity
   ## * *axis*: axis type
   ## * *value*: length of vector in surface-local coordinate space
-  resource.post_event(wl_pointer_event_axis.ord, time, axis, value)
+  resource.post_event(PointerEvent_axis.ord, time, axis, value)
 
-proc wl_pointer_send_frame*(resource: ptr wl_resource) {.inline, exportc: "wl_pointer_send_frame".} =
+proc pointerSendFrame*(resource: ptr Resource) {.inline, exportc: "wl_pointer_send_frame".} =
   ## Sends an frame event to the client owning the resource.
   ## 
   ## **params**:
   ## * *resource*: The client's resource
-  resource.post_event(wl_pointer_event_frame.ord)
+  resource.post_event(PointerEvent_frame.ord)
 
-proc wl_pointer_send_axis_source*(resource: ptr wl_resource; axis_source: uint32) {.inline, exportc: "wl_pointer_send_axis_source".} =
+proc pointerSendAxisSource*(resource: ptr Resource; axisSource: uint32) {.inline, exportc: "wl_pointer_send_axis_source".} =
   ## Sends an axis_source event to the client owning the resource.
   ## 
   ## **params**:
   ## * *resource*: The client's resource
   ## * *axis_source*: source of the axis event
-  resource.post_event(wl_pointer_event_axis_source.ord, axis_source)
+  resource.post_event(PointerEvent_axis_source.ord, axisSource)
 
-proc wl_pointer_send_axis_stop*(resource: ptr wl_resource; time: uint32; axis: uint32) {.inline, exportc: "wl_pointer_send_axis_stop".} =
+proc pointerSendAxisStop*(resource: ptr Resource; time: uint32; axis: uint32) {.inline, exportc: "wl_pointer_send_axis_stop".} =
   ## Sends an axis_stop event to the client owning the resource.
   ## 
   ## **params**:
   ## * *resource*: The client's resource
   ## * *time*: timestamp with millisecond granularity
   ## * *axis*: the axis stopped with this event
-  resource.post_event(wl_pointer_event_axis_stop.ord, time, axis)
+  resource.post_event(PointerEvent_axis_stop.ord, time, axis)
 
-proc wl_pointer_send_axis_discrete*(resource: ptr wl_resource; axis: uint32; discrete: int32) {.inline, exportc: "wl_pointer_send_axis_discrete".} =
+proc pointerSendAxisDiscrete*(resource: ptr Resource; axis: uint32; discrete: int32) {.inline, exportc: "wl_pointer_send_axis_discrete".} =
   ## Sends an axis_discrete event to the client owning the resource.
   ## 
   ## **params**:
   ## * *resource*: The client's resource
   ## * *axis*: axis type
   ## * *discrete*: number of steps
-  resource.post_event(wl_pointer_event_axis_discrete.ord, axis, discrete)
+  resource.post_event(PointerEvent_axis_discrete.ord, axis, discrete)
 
-proc wl_pointer_send_axis_value120*(resource: ptr wl_resource; axis: uint32; value120: int32) {.inline, exportc: "wl_pointer_send_axis_value120".} =
+proc pointerSendAxisValue120*(resource: ptr Resource; axis: uint32; value120: int32) {.inline, exportc: "wl_pointer_send_axis_value120".} =
   ## Sends an axis_value120 event to the client owning the resource.
   ## 
   ## **params**:
   ## * *resource*: The client's resource
   ## * *axis*: axis type
   ## * *value120*: scroll distance as fraction of 120
-  resource.post_event(wl_pointer_event_axis_value120.ord, axis, value120)
+  resource.post_event(PointerEvent_axis_value120.ord, axis, value120)
 
-proc wl_pointer_send_axis_relative_direction*(resource: ptr wl_resource; axis: uint32; direction: uint32) {.inline, exportc: "wl_pointer_send_axis_relative_direction".} =
+proc pointerSendAxisRelativeDirection*(resource: ptr Resource; axis: uint32; direction: uint32) {.inline, exportc: "wl_pointer_send_axis_relative_direction".} =
   ## Sends an axis_relative_direction event to the client owning the resource.
   ## 
   ## **params**:
   ## * *resource*: The client's resource
   ## * *axis*: axis type
   ## * *direction*: physical direction relative to axis motion
-  resource.post_event(wl_pointer_event_axis_relative_direction.ord, axis, direction)
+  resource.post_event(PointerEvent_axis_relative_direction.ord, axis, direction)
 
-type WlKeyboardInterface* = object
+type KeyboardInterface* = object
   release*: proc(
-    client: ptr wl_client;
-    resource: ptr wl_resource;
+    client: ptr Client;
+    resource: ptr Resource;
   ) {.nimcall.}
 
-proc wl_keyboard_send_keymap*(resource: ptr wl_resource; format: uint32; fd: int32; size: uint32) {.inline, exportc: "wl_keyboard_send_keymap".} =
+proc keyboardSendKeymap*(resource: ptr Resource; format: uint32; fd: int32; size: uint32) {.inline, exportc: "wl_keyboard_send_keymap".} =
   ## Sends an keymap event to the client owning the resource.
   ## 
   ## **params**:
@@ -736,9 +754,9 @@ proc wl_keyboard_send_keymap*(resource: ptr wl_resource; format: uint32; fd: int
   ## * *format*: keymap format
   ## * *fd*: keymap file descriptor
   ## * *size*: keymap size, in bytes
-  resource.post_event(wl_keyboard_event_keymap.ord, format, fd, size)
+  resource.post_event(KeyboardEvent_keymap.ord, format, fd, size)
 
-proc wl_keyboard_send_enter*(resource: ptr wl_resource; serial: uint32; surface: ptr wl_resource; keys: ptr wl_array) {.inline, exportc: "wl_keyboard_send_enter".} =
+proc keyboardSendEnter*(resource: ptr Resource; serial: uint32; surface: ptr Resource; keys: ptr Array) {.inline, exportc: "wl_keyboard_send_enter".} =
   ## Sends an enter event to the client owning the resource.
   ## 
   ## **params**:
@@ -746,18 +764,18 @@ proc wl_keyboard_send_enter*(resource: ptr wl_resource; serial: uint32; surface:
   ## * *serial*: serial number of the enter event
   ## * *surface*: surface gaining keyboard focus
   ## * *keys*: the keys currently logically down
-  resource.post_event(wl_keyboard_event_enter.ord, serial, surface, keys)
+  resource.post_event(KeyboardEvent_enter.ord, serial, surface, keys)
 
-proc wl_keyboard_send_leave*(resource: ptr wl_resource; serial: uint32; surface: ptr wl_resource) {.inline, exportc: "wl_keyboard_send_leave".} =
+proc keyboardSendLeave*(resource: ptr Resource; serial: uint32; surface: ptr Resource) {.inline, exportc: "wl_keyboard_send_leave".} =
   ## Sends an leave event to the client owning the resource.
   ## 
   ## **params**:
   ## * *resource*: The client's resource
   ## * *serial*: serial number of the leave event
   ## * *surface*: surface that lost keyboard focus
-  resource.post_event(wl_keyboard_event_leave.ord, serial, surface)
+  resource.post_event(KeyboardEvent_leave.ord, serial, surface)
 
-proc wl_keyboard_send_key*(resource: ptr wl_resource; serial: uint32; time: uint32; key: uint32; state: uint32) {.inline, exportc: "wl_keyboard_send_key".} =
+proc keyboardSendKey*(resource: ptr Resource; serial: uint32; time: uint32; key: uint32; state: uint32) {.inline, exportc: "wl_keyboard_send_key".} =
   ## Sends an key event to the client owning the resource.
   ## 
   ## **params**:
@@ -766,9 +784,9 @@ proc wl_keyboard_send_key*(resource: ptr wl_resource; serial: uint32; time: uint
   ## * *time*: timestamp with millisecond granularity
   ## * *key*: key that produced the event
   ## * *state*: physical state of the key
-  resource.post_event(wl_keyboard_event_key.ord, serial, time, key, state)
+  resource.post_event(KeyboardEvent_key.ord, serial, time, key, state)
 
-proc wl_keyboard_send_modifiers*(resource: ptr wl_resource; serial: uint32; mods_depressed: uint32; mods_latched: uint32; mods_locked: uint32; group: uint32) {.inline, exportc: "wl_keyboard_send_modifiers".} =
+proc keyboardSendModifiers*(resource: ptr Resource; serial: uint32; modsDepressed: uint32; modsLatched: uint32; modsLocked: uint32; group: uint32) {.inline, exportc: "wl_keyboard_send_modifiers".} =
   ## Sends an modifiers event to the client owning the resource.
   ## 
   ## **params**:
@@ -778,24 +796,24 @@ proc wl_keyboard_send_modifiers*(resource: ptr wl_resource; serial: uint32; mods
   ## * *mods_latched*: latched modifiers
   ## * *mods_locked*: locked modifiers
   ## * *group*: keyboard layout
-  resource.post_event(wl_keyboard_event_modifiers.ord, serial, mods_depressed, mods_latched, mods_locked, group)
+  resource.post_event(KeyboardEvent_modifiers.ord, serial, modsDepressed, modsLatched, modsLocked, group)
 
-proc wl_keyboard_send_repeat_info*(resource: ptr wl_resource; rate: int32; delay: int32) {.inline, exportc: "wl_keyboard_send_repeat_info".} =
+proc keyboardSendRepeatInfo*(resource: ptr Resource; rate: int32; delay: int32) {.inline, exportc: "wl_keyboard_send_repeat_info".} =
   ## Sends an repeat_info event to the client owning the resource.
   ## 
   ## **params**:
   ## * *resource*: The client's resource
   ## * *rate*: the rate of repeating keys in characters per second
   ## * *delay*: delay in milliseconds since key down until repeating starts
-  resource.post_event(wl_keyboard_event_repeat_info.ord, rate, delay)
+  resource.post_event(KeyboardEvent_repeat_info.ord, rate, delay)
 
-type WlTouchInterface* = object
+type TouchInterface* = object
   release*: proc(
-    client: ptr wl_client;
-    resource: ptr wl_resource;
+    client: ptr Client;
+    resource: ptr Resource;
   ) {.nimcall.}
 
-proc wl_touch_send_down*(resource: ptr wl_resource; serial: uint32; time: uint32; surface: ptr wl_resource; id: int32; x: wl_fixed_t; y: wl_fixed_t) {.inline, exportc: "wl_touch_send_down".} =
+proc touchSendDown*(resource: ptr Resource; serial: uint32; time: uint32; surface: ptr Resource; id: int32; x: Fixed; y: Fixed) {.inline, exportc: "wl_touch_send_down".} =
   ## Sends an down event to the client owning the resource.
   ## 
   ## **params**:
@@ -806,9 +824,9 @@ proc wl_touch_send_down*(resource: ptr wl_resource; serial: uint32; time: uint32
   ## * *id*: the unique ID of this touch point
   ## * *x*: surface-local x coordinate
   ## * *y*: surface-local y coordinate
-  resource.post_event(wl_touch_event_down.ord, serial, time, surface, id, x, y)
+  resource.post_event(TouchEvent_down.ord, serial, time, surface, id, x, y)
 
-proc wl_touch_send_up*(resource: ptr wl_resource; serial: uint32; time: uint32; id: int32) {.inline, exportc: "wl_touch_send_up".} =
+proc touchSendUp*(resource: ptr Resource; serial: uint32; time: uint32; id: int32) {.inline, exportc: "wl_touch_send_up".} =
   ## Sends an up event to the client owning the resource.
   ## 
   ## **params**:
@@ -816,9 +834,9 @@ proc wl_touch_send_up*(resource: ptr wl_resource; serial: uint32; time: uint32; 
   ## * *serial*: serial number of the touch up event
   ## * *time*: timestamp with millisecond granularity
   ## * *id*: the unique ID of this touch point
-  resource.post_event(wl_touch_event_up.ord, serial, time, id)
+  resource.post_event(TouchEvent_up.ord, serial, time, id)
 
-proc wl_touch_send_motion*(resource: ptr wl_resource; time: uint32; id: int32; x: wl_fixed_t; y: wl_fixed_t) {.inline, exportc: "wl_touch_send_motion".} =
+proc touchSendMotion*(resource: ptr Resource; time: uint32; id: int32; x: Fixed; y: Fixed) {.inline, exportc: "wl_touch_send_motion".} =
   ## Sends an motion event to the client owning the resource.
   ## 
   ## **params**:
@@ -827,23 +845,23 @@ proc wl_touch_send_motion*(resource: ptr wl_resource; time: uint32; id: int32; x
   ## * *id*: the unique ID of this touch point
   ## * *x*: surface-local x coordinate
   ## * *y*: surface-local y coordinate
-  resource.post_event(wl_touch_event_motion.ord, time, id, x, y)
+  resource.post_event(TouchEvent_motion.ord, time, id, x, y)
 
-proc wl_touch_send_frame*(resource: ptr wl_resource) {.inline, exportc: "wl_touch_send_frame".} =
+proc touchSendFrame*(resource: ptr Resource) {.inline, exportc: "wl_touch_send_frame".} =
   ## Sends an frame event to the client owning the resource.
   ## 
   ## **params**:
   ## * *resource*: The client's resource
-  resource.post_event(wl_touch_event_frame.ord)
+  resource.post_event(TouchEvent_frame.ord)
 
-proc wl_touch_send_cancel*(resource: ptr wl_resource) {.inline, exportc: "wl_touch_send_cancel".} =
+proc touchSendCancel*(resource: ptr Resource) {.inline, exportc: "wl_touch_send_cancel".} =
   ## Sends an cancel event to the client owning the resource.
   ## 
   ## **params**:
   ## * *resource*: The client's resource
-  resource.post_event(wl_touch_event_cancel.ord)
+  resource.post_event(TouchEvent_cancel.ord)
 
-proc wl_touch_send_shape*(resource: ptr wl_resource; id: int32; major: wl_fixed_t; minor: wl_fixed_t) {.inline, exportc: "wl_touch_send_shape".} =
+proc touchSendShape*(resource: ptr Resource; id: int32; major: Fixed; minor: Fixed) {.inline, exportc: "wl_touch_send_shape".} =
   ## Sends an shape event to the client owning the resource.
   ## 
   ## **params**:
@@ -851,24 +869,24 @@ proc wl_touch_send_shape*(resource: ptr wl_resource; id: int32; major: wl_fixed_
   ## * *id*: the unique ID of this touch point
   ## * *major*: length of the major axis in surface-local coordinates
   ## * *minor*: length of the minor axis in surface-local coordinates
-  resource.post_event(wl_touch_event_shape.ord, id, major, minor)
+  resource.post_event(TouchEvent_shape.ord, id, major, minor)
 
-proc wl_touch_send_orientation*(resource: ptr wl_resource; id: int32; orientation: wl_fixed_t) {.inline, exportc: "wl_touch_send_orientation".} =
+proc touchSendOrientation*(resource: ptr Resource; id: int32; orientation: Fixed) {.inline, exportc: "wl_touch_send_orientation".} =
   ## Sends an orientation event to the client owning the resource.
   ## 
   ## **params**:
   ## * *resource*: The client's resource
   ## * *id*: the unique ID of this touch point
   ## * *orientation*: angle between major axis and positive surface y-axis in degrees
-  resource.post_event(wl_touch_event_orientation.ord, id, orientation)
+  resource.post_event(TouchEvent_orientation.ord, id, orientation)
 
-type WlOutputInterface* = object
+type OutputInterface* = object
   release*: proc(
-    client: ptr wl_client;
-    resource: ptr wl_resource;
+    client: ptr Client;
+    resource: ptr Resource;
   ) {.nimcall.}
 
-proc wl_output_send_geometry*(resource: ptr wl_resource; x: int32; y: int32; physical_width: int32; physical_height: int32; subpixel: int32; make: cstring; model: cstring; transform: int32) {.inline, exportc: "wl_output_send_geometry".} =
+proc outputSendGeometry*(resource: ptr Resource; x: int32; y: int32; physicalWidth: int32; physicalHeight: int32; subpixel: int32; make: cstring; model: cstring; transform: int32) {.inline, exportc: "wl_output_send_geometry".} =
   ## Sends an geometry event to the client owning the resource.
   ## 
   ## **params**:
@@ -881,9 +899,9 @@ proc wl_output_send_geometry*(resource: ptr wl_resource; x: int32; y: int32; phy
   ## * *make*: textual description of the manufacturer
   ## * *model*: textual description of the model
   ## * *transform*: additional transformation applied to buffer contents during presentation
-  resource.post_event(wl_output_event_geometry.ord, x, y, physical_width, physical_height, subpixel, make, model, transform)
+  resource.post_event(OutputEvent_geometry.ord, x, y, physicalWidth, physicalHeight, subpixel, make, model, transform)
 
-proc wl_output_send_mode*(resource: ptr wl_resource; flags: uint32; width: int32; height: int32; refresh: int32) {.inline, exportc: "wl_output_send_mode".} =
+proc outputSendMode*(resource: ptr Resource; flags: uint32; width: int32; height: int32; refresh: int32) {.inline, exportc: "wl_output_send_mode".} =
   ## Sends an mode event to the client owning the resource.
   ## 
   ## **params**:
@@ -892,101 +910,101 @@ proc wl_output_send_mode*(resource: ptr wl_resource; flags: uint32; width: int32
   ## * *width*: width of the mode in hardware units
   ## * *height*: height of the mode in hardware units
   ## * *refresh*: vertical refresh rate in mHz
-  resource.post_event(wl_output_event_mode.ord, flags, width, height, refresh)
+  resource.post_event(OutputEvent_mode.ord, flags, width, height, refresh)
 
-proc wl_output_send_done*(resource: ptr wl_resource) {.inline, exportc: "wl_output_send_done".} =
+proc outputSendDone*(resource: ptr Resource) {.inline, exportc: "wl_output_send_done".} =
   ## Sends an done event to the client owning the resource.
   ## 
   ## **params**:
   ## * *resource*: The client's resource
-  resource.post_event(wl_output_event_done.ord)
+  resource.post_event(OutputEvent_done.ord)
 
-proc wl_output_send_scale*(resource: ptr wl_resource; factor: int32) {.inline, exportc: "wl_output_send_scale".} =
+proc outputSendScale*(resource: ptr Resource; factor: int32) {.inline, exportc: "wl_output_send_scale".} =
   ## Sends an scale event to the client owning the resource.
   ## 
   ## **params**:
   ## * *resource*: The client's resource
   ## * *factor*: scaling factor of output
-  resource.post_event(wl_output_event_scale.ord, factor)
+  resource.post_event(OutputEvent_scale.ord, factor)
 
-proc wl_output_send_name*(resource: ptr wl_resource; name: cstring) {.inline, exportc: "wl_output_send_name".} =
+proc outputSendName*(resource: ptr Resource; name: cstring) {.inline, exportc: "wl_output_send_name".} =
   ## Sends an name event to the client owning the resource.
   ## 
   ## **params**:
   ## * *resource*: The client's resource
   ## * *name*: output name
-  resource.post_event(wl_output_event_name.ord, name)
+  resource.post_event(OutputEvent_name.ord, name)
 
-proc wl_output_send_description*(resource: ptr wl_resource; description: cstring) {.inline, exportc: "wl_output_send_description".} =
+proc outputSendDescription*(resource: ptr Resource; description: cstring) {.inline, exportc: "wl_output_send_description".} =
   ## Sends an description event to the client owning the resource.
   ## 
   ## **params**:
   ## * *resource*: The client's resource
   ## * *description*: output description
-  resource.post_event(wl_output_event_description.ord, description)
+  resource.post_event(OutputEvent_description.ord, description)
 
-type WlRegionInterface* = object
+type RegionInterface* = object
   destroy*: proc(
-    client: ptr wl_client;
-    resource: ptr wl_resource;
+    client: ptr Client;
+    resource: ptr Resource;
   ) {.nimcall.}
   add*: proc(
-    client: ptr wl_client;
-    resource: ptr wl_resource;
+    client: ptr Client;
+    resource: ptr Resource;
     x: int32;
     y: int32;
     width: int32;
     height: int32;
   ) {.nimcall.}
   subtract*: proc(
-    client: ptr wl_client;
-    resource: ptr wl_resource;
+    client: ptr Client;
+    resource: ptr Resource;
     x: int32;
     y: int32;
     width: int32;
     height: int32;
   ) {.nimcall.}
 
-type WlSubcompositorInterface* = object
+type SubcompositorInterface* = object
   destroy*: proc(
-    client: ptr wl_client;
-    resource: ptr wl_resource;
+    client: ptr Client;
+    resource: ptr Resource;
   ) {.nimcall.}
-  get_subsurface*: proc(
-    client: ptr wl_client;
-    resource: ptr wl_resource;
+  getSubsurface*: proc(
+    client: ptr Client;
+    resource: ptr Resource;
     id: uint32;
-    surface: ptr wl_resource;
-    parent: ptr wl_resource;
+    surface: ptr Resource;
+    parent: ptr Resource;
   ) {.nimcall.}
 
-type WlSubsurfaceInterface* = object
+type SubsurfaceInterface* = object
   destroy*: proc(
-    client: ptr wl_client;
-    resource: ptr wl_resource;
+    client: ptr Client;
+    resource: ptr Resource;
   ) {.nimcall.}
-  set_position*: proc(
-    client: ptr wl_client;
-    resource: ptr wl_resource;
+  setPosition*: proc(
+    client: ptr Client;
+    resource: ptr Resource;
     x: int32;
     y: int32;
   ) {.nimcall.}
-  place_above*: proc(
-    client: ptr wl_client;
-    resource: ptr wl_resource;
-    sibling: ptr wl_resource;
+  placeAbove*: proc(
+    client: ptr Client;
+    resource: ptr Resource;
+    sibling: ptr Resource;
   ) {.nimcall.}
-  place_below*: proc(
-    client: ptr wl_client;
-    resource: ptr wl_resource;
-    sibling: ptr wl_resource;
+  placeBelow*: proc(
+    client: ptr Client;
+    resource: ptr Resource;
+    sibling: ptr Resource;
   ) {.nimcall.}
-  set_sync*: proc(
-    client: ptr wl_client;
-    resource: ptr wl_resource;
+  setSync*: proc(
+    client: ptr Client;
+    resource: ptr Resource;
   ) {.nimcall.}
-  set_desync*: proc(
-    client: ptr wl_client;
-    resource: ptr wl_resource;
+  setDesync*: proc(
+    client: ptr Client;
+    resource: ptr Resource;
   ) {.nimcall.}
 

@@ -2,33 +2,33 @@ import std/unittest
 import std/posix
 
 import
-  wayland/native/server
+  wayland/native/server as wl
 
 type
   client_destroy_listener* {.bycopy.} = object
-    listener*: wl_listener
+    listener*: wl.Listener
     done*: bool
-    late_listener*: wl_listener
+    late_listener*: wl.Listener
     late_done*: bool
-    resource_listener*: wl_listener
+    resource_listener*: wl.Listener
     resource_done*: bool
 
 
-proc client_destroy_notify*(l: ptr wl_listener; data: pointer) =
+proc client_destroy_notify*(l: ptr wl.Listener; data: pointer) =
   var listener: ptr client_destroy_listener
   listener = wl_container_of(l, listener, listener)
   listener.done = true
   assert not listener.resource_done
   assert not listener.late_done
 
-proc client_resource_destroy_notify*(l: ptr wl_listener; data: pointer) =
+proc client_resource_destroy_notify*(l: ptr wl.Listener; data: pointer) =
   var listener: ptr client_destroy_listener
   listener = wl_container_of(l, listener, resource_listener)
   assert listener.done
   listener.resource_done = true
   assert not listener.late_done
 
-proc client_late_destroy_notify*(l: ptr wl_listener; data: pointer) =
+proc client_late_destroy_notify*(l: ptr wl.Listener; data: pointer) =
   var listener: ptr client_destroy_listener
   listener = wl_container_of(l, listener, late_listener)
   assert listener.done
@@ -39,8 +39,8 @@ proc client_user_data_destroy*(data: pointer) =
   var user_data_destroyed = cast[ptr bool](data)
   user_data_destroyed[] = true
 
-proc client_destroy_remove_link_notify(l: ptr wl_listener; data: pointer) =
-  let client = cast[ptr wl_client](data)
+proc client_destroy_remove_link_notify(l: ptr wl.Listener; data: pointer) =
+  let client = cast[ptr wl.Client](data)
   var listener: ptr client_destroy_listener
   listener = wl_container_of(l, listener, listener)
 
@@ -54,9 +54,9 @@ proc client_destroy_remove_link_notify(l: ptr wl_listener; data: pointer) =
 suite "client":
   test "client_destroy_listener":
     var
-      display: ptr wl_display
-      client: ptr wl_client
-      resource: ptr wl_resource
+      display: ptr wl.Display
+      client: ptr wl.Client
+      resource: ptr wl.Resource
       a, b: client_destroy_listener
       user_data_destroyed: bool
       s: array[2, cint]
@@ -119,8 +119,8 @@ suite "client":
     destroy display
 
   test "client_destroy_removes_link":
-    var display: ptr wl_display
-    var client: ptr wl_client
+    var display: ptr wl.Display
+    var client: ptr wl.Client
     var destroy_listener: client_destroy_listener
     var s: array[2, cint]
 

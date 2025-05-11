@@ -1,14 +1,14 @@
 import std/[unittest, posix]
-import wayland/native/[server]
+import wayland/native/server as wl
 
-proc res_destroy_func*(res: ptr wl_resource) =
+proc res_destroy_func*(res: ptr wl.Resource) =
   assert res != nil
   let destr = cast[ptr bool](res.get_user_data)
   destr[] = true
 
 var notify_called*: bool
 
-proc destroy_notify*(l: ptr wl_listener; data: pointer) =
+proc destroy_notify*(l: ptr wl.Listener; data: pointer) =
   assert l != nil and data != nil
   notify_called = true
   ##  In real code it's common to free the structure holding the
@@ -22,18 +22,18 @@ proc destroy_notify*(l: ptr wl_listener; data: pointer) =
   l.link.prev = nil
   l.link.next = nil
 
-proc display_destroy_notify*(l: ptr wl_listener; data: pointer) =
+proc display_destroy_notify*(l: ptr wl.Listener; data: pointer) =
   l.link.prev = nil
   l.link.next = nil
 
-proc client_resource_check*(resource: ptr wl_resource; data: pointer): wl_iterator_result =
+proc client_resource_check*(resource: ptr wl.Resource; data: pointer): wl_iterator_result =
   ##  Ensure there is no iteration over already freed resources.
   assert resource.get_user_data == nil
   return WL_ITERATOR_CONTINUE
 
-proc resource_destroy_notify*(l: ptr wl_listener; data: pointer) =
-  let resource = cast[ptr wl_resource](data)
-  let client: ptr wl_client = resource.client
+proc resource_destroy_notify*(l: ptr wl.Listener; data: pointer) =
+  let resource = cast[ptr wl.Resource](data)
+  let client: ptr wl.Client = resource.client
   client.for_each_resource(client_resource_check, nil)
   ##  Set user data to flag the resource has been deleted. The resource should
   ##  not be accessible from this point forward.
@@ -67,13 +67,13 @@ suite "resources":
   test "destroy_resource":
     var s: array[2, cint]
     var destroyed: bool
-    let destroy_listener = wl_listener(notify: destroy_notify)
+    let destroy_listener = wl.Listener(notify: destroy_notify)
     check socketpair(AF_UNIX, SOCK_STREAM or SOCK_CLOEXEC, 0, s) == 0
     let display = create_display()
     check display != nil
     let client = display.create_client(s[0])
     check client != nil
-    var res = client.create_resource(addr wl_seat_interface, 4, 0)
+    var res = client.create_resource(addr wl_Seat_interface, 4, 0)
     check res != nil
     res.set_implementation(nil, addr destroyed, res_destroy_func)
     res.add_destroy_listener(addr destroy_listener)
@@ -87,7 +87,7 @@ suite "resources":
     check client.get_object(id) == nil
     check destroy_listener.link.prev == nil
     check destroy_listener.link.next == nil
-    res = client.create_resource(addr wl_seat_interface, 2, 0)
+    res = client.create_resource(addr wl_Seat_interface, 2, 0)
     check res != nil
     destroyed = false
     notify_called = false
@@ -125,8 +125,8 @@ suite "resources":
     discard close s[1]
 
   test "free_without_remove":
-    let a = wl_listener(notify: display_destroy_notify)
-    let b = wl_listener(notify: display_destroy_notify)
+    let a = wl.Listener(notify: display_destroy_notify)
+    let b = wl.Listener(notify: display_destroy_notify)
     let display = create_display()
     display.add_destroy_listener addr a
     display.add_destroy_listener addr b
@@ -136,8 +136,8 @@ suite "resources":
 
   test "resource_destroy_iteration":
     var s: array[2, cint]
-    let destroy_listener1 = wl_listener(notify: resource_destroy_notify)
-    let destroy_listener2 = wl_listener(notify: resource_destroy_notify)
+    let destroy_listener1 = wl.Listener(notify: resource_destroy_notify)
+    let destroy_listener2 = wl.Listener(notify: resource_destroy_notify)
     check socketpair(AF_UNIX, SOCK_STREAM or SOCK_CLOEXEC, 0, s) == 0
     let display = create_display()
     check display != nil

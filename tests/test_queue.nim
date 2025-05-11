@@ -24,17 +24,17 @@
 ##
 
 import std/[unittest, posix, strutils, strformat]
-import wayland/native/[client, server]
+import wayland/native as wl
 import compositor
 
-proc registry_handle_global*(data: pointer; registry: ptr wl_registry; id: uint32;
+proc registry_handle_global*(data: pointer; registry: ptr wl.Registry; id: uint32;
                             `interface`: cstring; version: uint32) =
   let pcounter = cast[ptr cint](data)
   inc pcounter[]
   assert pcounter[] == 1
   destroy registry
 
-let registry_listener* = WlRegistryListener(global: registry_handle_global)
+let registry_listener* = wl.RegistryListener(global: registry_handle_global)
 
 ##  Test that destroying a proxy object doesn't result in any more
 ##  callback being invoked, even though were many queued.
@@ -54,19 +54,19 @@ proc client_test_proxy_destroy*() =
 
 type
   multiple_queues_state* {.bycopy.} = object
-    display*: ptr wl_display
-    callback2*: ptr wl_callback
+    display*: ptr wl.Display
+    callback2*: ptr wl.Callback
     done*: bool
 
 
-proc sync_callback*(data: pointer; callback: ptr wl_callback; serial: uint32) =
+proc sync_callback*(data: pointer; callback: ptr wl.Callback; serial: uint32) =
   var state = cast[ptr multiple_queues_state](data)
   state.done = true
   destroy callback
   discard dispatch_pending state.display
   destroy state.callback2
 
-let sync_listener* = WlCallbackListener(done: sync_callback)
+let sync_listener* = wl.CallbackListener(done: sync_callback)
 
 ##  Test that when receiving the first of two synchronization
 ##  callback events, destroying the second one doesn't cause any
@@ -83,11 +83,11 @@ proc client_test_multiple_queues*() =
   let callback1 = state.display.sync
   assert callback1 != nil
   discard callback1.add_listener(addr(sync_listener), addr(state))
-  cast[ptr wl_proxy](callback1).set_queue queue
+  cast[ptr wl.Proxy](callback1).set_queue queue
   state.callback2 = state.display.sync
   assert state.callback2 != nil
   discard state.callback2.add_listener(addr(sync_listener), nil)
-  cast[ptr wl_proxy](state.callback2).set_queue queue
+  cast[ptr wl.Proxy](state.callback2).set_queue queue
   discard flush state.display
   while not state.done and ret == 0:
     ret = state.display.dispatch_queue(queue)
@@ -95,11 +95,11 @@ proc client_test_multiple_queues*() =
   disconnect state.display
   quit(if ret == -1: -1 else: 0)
 
-proc sync_callback_roundtrip*(data: pointer; callback: ptr wl_callback; serial: uint32) =
+proc sync_callback_roundtrip*(data: pointer; callback: ptr wl.Callback; serial: uint32) =
   let done = cast[ptr bool](data)
   done[] = true
 
-let sync_listener_roundtrip* = WlCallbackListener(done: sync_callback_roundtrip)
+let sync_listener_roundtrip* = wl.CallbackListener(done: sync_callback_roundtrip)
 
 ##  Test that doing a roundtrip on a queue only the events on that
 ##  queue get dispatched.
@@ -119,7 +119,7 @@ proc client_test_queue_roundtrip*() =
   var callback2 = display.sync
   assert callback2 != nil
   discard callback2.add_listener(addr sync_listener_roundtrip, addr done2)
-  cast[ptr wl_proxy](callback2).set_queue queue
+  cast[ptr wl.Proxy](callback2).set_queue queue
   ##  roundtrip on default queue must not dispatch the other queue.
   discard roundtrip display
   assert done1 == true
@@ -151,9 +151,9 @@ proc client_test_queue_proxy_wrapper*() =
   ##  used.
   let queue = display.create_queue
   assert queue != nil
-  let display_wrapper = cast[ptr wl_display](wl_proxy_create_wrapper(display))
+  let display_wrapper = cast[ptr wl.Display](wl_proxy_create_wrapper(display))
   assert display_wrapper != nil
-  cast[ptr wl_proxy](display_wrapper).set_queue queue
+  cast[ptr wl.Proxy](display_wrapper).set_queue queue
   let callback = display_wrapper.sync
   wl_proxy_wrapper_destroy(display_wrapper)
   assert callback != nil
@@ -194,7 +194,7 @@ proc client_test_queue_set_queue_race*() =
   ##  Pretend we are back in the separate thread, and continue with setting
   ##  up our callback.
   discard callback.add_listener(addr sync_listener_roundtrip, addr done)
-  cast[ptr wl_proxy](callback).set_queue queue
+  cast[ptr wl.Proxy](callback).set_queue queue
   ##  Roundtrip our separate thread queue to make sure any events are
   ##  dispatched.
   discard display.roundtrip_queue queue
@@ -212,9 +212,9 @@ proc client_test_queue_destroy_with_attached_proxies*() =
   let queue = display.create_queue
   assert queue != nil
   ##  Create a sync dispatching events on the thread-local queue.
-  let display_wrapper = cast[ptr wl_display](wl_proxy_create_wrapper(display))
+  let display_wrapper = cast[ptr wl.Display](wl_proxy_create_wrapper(display))
   assert display_wrapper != nil
-  cast[ptr wl_proxy](display_wrapper).set_queue queue
+  cast[ptr wl.Proxy](display_wrapper).set_queue queue
   let callback = display_wrapper.sync
   wl_proxy_wrapper_destroy(display_wrapper)
   assert callback != nil
@@ -226,7 +226,7 @@ proc client_test_queue_destroy_with_attached_proxies*() =
   client_log.setFilePos(0)
   while not client_log.endOfFile:
     last_line = client_log.readLine
-  let callback_name = &"wl_callback#{cast[ptr wl_proxy](callback).get_id}"
+  let callback_name = &"wl_callback#{cast[ptr wl.Proxy](callback).get_id}"
   assert callback_name in last_line
   destroy callback
   disconnect display
@@ -239,9 +239,9 @@ proc client_test_queue_proxy_event_to_destroyed_queue*() =
   let queue = display.create_queue
   assert queue != nil
   ##  Create a sync dispatching events on the thread-local queue.
-  let display_wrapper = cast[ptr wl_display](wl_proxy_create_wrapper(display))
+  let display_wrapper = cast[ptr wl.Display](wl_proxy_create_wrapper(display))
   assert display_wrapper != nil
-  cast[ptr wl_proxy](display_wrapper).set_queue queue
+  cast[ptr wl.Proxy](display_wrapper).set_queue queue
   let callback = display_wrapper.sync
   wl_proxy_wrapper_destroy(display_wrapper)
   assert callback != nil
@@ -267,28 +267,28 @@ proc client_test_queue_destroy_default_with_attached_proxies*() =
   ##  wl_callback proxy.
   client_log.setFilePos(0)
   let log = client_log.readAll
-  let callback_name = &"wl_callback#{cast[ptr wl_proxy](callback).get_id}"
+  let callback_name = &"wl_callback#{cast[ptr wl.Proxy](callback).get_id}"
   assert callback_name notin log
   # dealloc callback
 
-proc check_queue_name*(proxy: ptr wl_proxy; name: cstring) =
+proc check_queue_name*(proxy: ptr wl.Proxy; name: cstring) =
   let queue = proxy.get_queue
   let queue_name = queue.get_name
   assert queue_name == name
 
-proc roundtrip_named_queue_nonblock*(display: ptr wl_display;
-                                    queue: ptr wl_event_queue; name: cstring): ptr wl_callback =
-  var callback: ptr wl_callback
-  var wrapped_display: ptr wl_display = nil
+proc roundtrip_named_queue_nonblock*(display: ptr wl.Display;
+                                    queue: ptr wl.EventQueue; name: cstring): ptr wl.Callback =
+  var callback: ptr wl.Callback
+  var wrapped_display: ptr wl.Display = nil
   if queue != nil:
-    wrapped_display = cast[ptr wl_display](wl_proxy_create_wrapper(display))
+    wrapped_display = cast[ptr wl.Display](wl_proxy_create_wrapper(display))
     assert wrapped_display != nil
-    cast[ptr wl_proxy](wrapped_display).set_queue queue
-    check_queue_name(cast[ptr wl_proxy](wrapped_display), name)
+    cast[ptr wl.Proxy](wrapped_display).set_queue queue
+    check_queue_name(cast[ptr wl.Proxy](wrapped_display), name)
     callback = wrapped_display.sync
   else:
     callback = display.sync
-  check_queue_name(cast[ptr wl_proxy](callback), name)
+  check_queue_name(cast[ptr wl.Proxy](callback), name)
   if wrapped_display != nil:
     wl_proxy_wrapper_destroy(wrapped_display)
   assert callback != nil
@@ -297,7 +297,7 @@ proc roundtrip_named_queue_nonblock*(display: ptr wl_display;
 proc client_test_queue_names*() =
   let display = nil.connect_display
   assert display != nil
-  let default_queue = cast[ptr wl_proxy](display).get_queue
+  let default_queue = cast[ptr wl.Proxy](display).get_queue
   let default_queue_name = default_queue.get_name
   assert default_queue_name == "Default Queue"
   ##  Create some event queues both with and without names.
@@ -330,7 +330,7 @@ proc client_test_queue_names*() =
   destroy queue3
   disconnect display
 
-proc dummy_bind*(client: ptr wl_client; data: pointer; version: uint32; id: uint32) =
+proc dummy_bind*(client: ptr wl.Client; data: pointer; version: uint32; id: uint32) =
   discard
 
 suite "queue":

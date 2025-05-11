@@ -1,11 +1,11 @@
 import std/unittest
-import wayland/native/common
+import wayland/native/common as wl
 
 type element = object
   i: int
-  link: wl_list
+  link: wl.List
 
-proc validate_list(list: var wl_list; reference: openArray[int]): bool =
+proc validate_list(list: var wl.List; reference: openArray[int]): bool =
   var e: ptr element
   var i: int
 
@@ -24,7 +24,7 @@ proc validate_list(list: var wl_list; reference: openArray[int]): bool =
 
 suite "list":
   test "list_init":
-    var list: wl_list
+    var list: wl.List
 
     init list
     check list.next == addr list
@@ -32,7 +32,7 @@ suite "list":
     check empty list
 
   test "list_insert":
-    var list: wl_list
+    var list: wl.List
     var e: element
 
     init list
@@ -43,7 +43,7 @@ suite "list":
     check e.link.prev == addr list
 
   test "list_length":
-    var list: wl_list
+    var list: wl.List
     var e: element
 
     init list
@@ -54,7 +54,7 @@ suite "list":
     check list.length == 0
 
   test "list_iterator":
-    var list: wl_list
+    var list: wl.List
     var e1, e2, e3, e4: element
     var e: ptr element
     var i: int
@@ -87,7 +87,7 @@ suite "list":
     check i == reference.len
 
   test "list_remove":
-    var list: wl_list
+    var list: wl.List
     var e1, e2, e3: element
     let
       reference1 = [17, 8888, 1000]
@@ -107,7 +107,7 @@ suite "list":
     check validate_list(list, reference2)
 
   test "list_insert_list":
-    var list, other: wl_list
+    var list, other: wl.List
     var e1, e2, e3, e4, e5, e6: element
     let reference1 = [17, 8888, 1000]
     let reference2 = [76543, 1, -500]

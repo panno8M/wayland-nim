@@ -93,12 +93,12 @@ proc postprocess_server(contents: seq[string]): seq[string] =
 proc postprocess_cursor(contents: seq[string]): seq[string] =
   result = postprocess contents
   result.insert("import server", 1)
-  result.insert("type wl_cursor_theme* = object", 2)
+  result.insert("type CursorTheme* = object", 2)
 
 proc postprocess_egl(contents: seq[string]): seq[string] =
   result = postprocess contents
   result.insert("import client", 1)
-  result.insert("type wl_egl_window* = object", 2)
+  result.insert("type EglWindow* = object", 2)
 
 const
   defs = "generator/defs.c2nim"
@@ -181,9 +181,60 @@ proc c2nim(shell: ShellEnv; args: C2NimArgs; postprocess: proc(contents: seq[str
     r"--mangle:wl_cursor_theme_load=load_cursor_theme",
     r"--mangle:wl_cursor_theme_=",
     r"--mangle:wl_cursor_image_=",
-    r"--mangle:wl_cursor_=",
+    r"--mangle:wl_cursor_!(theme)!(image)=",
     r"--mangle:wl_egl_window_create=create_egl_window",
     r"--mangle:wl_egl_window_=",
+
+    r"--mangle:wl_buffer$=Buffer",
+    r"--mangle:wl_callback$=Callback",
+    r"--mangle:wl_client$=Client",
+    r"--mangle:wl_compositor$=Compositor",
+    r"--mangle:wl_connection$=Connection",
+    r"--mangle:wl_data_device$=DataDevice",
+    r"--mangle:wl_data_device_manager$=DataDeviceManager",
+    r"--mangle:wl_data_offer$=DataOffer",
+    r"--mangle:wl_data_source$=DataSource",
+    r"--mangle:wl_display$=Display",
+    r"--mangle:wl_event_loop$=EventLoop",
+    r"--mangle:wl_event_queue$=EventQueue",
+    r"--mangle:wl_event_source$=EventSource",
+    r"--mangle:wl_fixes$=Fixes",
+    r"--mangle:wl_global$=Global",
+    r"--mangle:wl_keyboard$=Keyboard",
+    r"--mangle:wl_output$=Output",
+    r"--mangle:wl_pointer$=Pointer",
+    r"--mangle:wl_protocol_logger$=ProtocolLogger",
+    r"--mangle:wl_proxy$=Proxy",
+    r"--mangle:wl_region$=Region",
+    r"--mangle:wl_registry$=Registry",
+    r"--mangle:wl_seat$=Seat",
+    r"--mangle:wl_shell$=Shell",
+    r"--mangle:wl_shell_surface$=ShellSurface",
+    r"--mangle:wl_shm$=Shm",
+    r"--mangle:wl_shm_buffer$=ShmBuffer",
+    r"--mangle:wl_shm_pool$=ShmPool",
+    r"--mangle:wl_subcompositor$=Subcompositor",
+    r"--mangle:wl_subsourface$=Subsurface",
+    r"--mangle:wl_surface$=Surface",
+    r"--mangle:wl_touch$=Touch",
+
+    r"--mangle:wl_message$=Message",
+    r"--mangle:wl_interface$=Interface",
+    r"--mangle:wl_list$=List",
+    r"--mangle:wl_array$=Array",
+    r"--mangle:wl_fixed_t$=Fixed",
+    r"--mangle:wl_argument$=Argument",
+    r"--mangle:wl_object$=Object",
+    r"--mangle:wl_resource$=Resource",
+    r"--mangle:wl_signal$=Signal",
+    r"--mangle:wl_listener$=Listener",
+    r"--mangle:wl_protocol_logger_type$=ProtocolLoggerType",
+    r"--mangle:wl_protocol_logger_message$=ProtocolLoggerMessage",
+
+    r"--mangle:wl_egl_window$=EglWindow",
+    r"--mangle:wl_cursor_theme$=CursorTheme",
+    r"--mangle:wl_cursor_image$=CursorImage",
+    r"--mangle:wl_cursor$=Cursor",
   ]
   result = shell.exec("c2nim", a)
   args.out.writeFile postprocess(args.out.readFile.splitLines).join("\n")

@@ -1,29 +1,29 @@
 import common
 import server
-type wl_cursor_theme* = object
+type CursorTheme* = object
 discard "forward decl of wl_cursor_theme"
 discard "forward decl of wl_buffer"
 discard "forward decl of wl_shm"
 type
-  image* {.bycopy.} = object
+  CursorImage* {.bycopy.} = object
     width*: uint32
     height*: uint32
     hotspot_x*: uint32
     hotspot_y*: uint32
     delay*: uint32
-  wl_cursor* {.bycopy.} = object
+  Cursor* {.bycopy.} = object
     image_count*: cuint
-    images*: ptr ptr image
+    images*: ptr ptr CursorImage
     name*: cstring
-proc load_cursor_theme*(name: cstring; size: cint; shm: ptr wl_shm): ptr theme {.nimcall,
+proc load_cursor_theme*(name: cstring; size: cint; shm: ptr Shm): ptr CursorTheme {.nimcall,
     importc: "wl_cursor_theme_load", dynlib: "libwayland-cursor.so".}
-proc destroy*(theme: ptr theme) {.nimcall, importc: "wl_cursor_theme_destroy",
-                              dynlib: "libwayland-cursor.so".}
-proc get_cursor*(theme: ptr theme; name: cstring): ptr wl_cursor {.nimcall,
+proc destroy*(theme: ptr CursorTheme) {.nimcall, importc: "wl_cursor_theme_destroy",
+                                    dynlib: "libwayland-cursor.so".}
+proc get_cursor*(theme: ptr CursorTheme; name: cstring): ptr Cursor {.nimcall,
     importc: "wl_cursor_theme_get_cursor", dynlib: "libwayland-cursor.so".}
-proc get_buffer*(image: ptr image): ptr wl_buffer {.nimcall,
+proc get_buffer*(image: ptr CursorImage): ptr Buffer {.nimcall,
     importc: "wl_cursor_image_get_buffer", dynlib: "libwayland-cursor.so".}
-proc frame*(cursor: ptr wl_cursor; time: uint32): cint {.nimcall,
-    importc: "wl_cursor_frame", dynlib: "libwayland-cursor.so".}
-proc frame_and_duration*(cursor: ptr wl_cursor; time: uint32; duration: ptr uint32): cint {.
+proc frame*(cursor: ptr Cursor; time: uint32): cint {.nimcall, importc: "wl_cursor_frame",
+    dynlib: "libwayland-cursor.so".}
+proc frame_and_duration*(cursor: ptr Cursor; time: uint32; duration: ptr uint32): cint {.
     nimcall, importc: "wl_cursor_frame_and_duration", dynlib: "libwayland-cursor.so".}

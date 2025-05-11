@@ -193,15 +193,30 @@ proc escapeVariable(w: string): string =
         result = quoted w
         break
 
+proc unquote(w: string): string = w.replace("`", "")
+
 proc identify(w: string): string =
-  result = w.parseIdent
-  if result.len != 0:
-    while result[^1] == '_':
-      result.setLen(result.len.pred)
-    result = escapeVariable result
+  result = newStringOfCap(w.len)
+
+  var needsLarge: bool
+  for c in w.replace("wl_", "").parseIdent:
+    case c
+    of '_':
+      needsLarge = true
+    else:
+      if needsLarge:
+        result.add c.toUpperAscii
+        needsLarge = false
+      else:
+        result.add c
+
+  result = escapeVariable result
 
 proc typify(w: string): string =
-  w.identify
+  if w in ["int", "uint32", "int32", "cstring", "pointer"]:
+    w
+  else:
+    w.identify.unquote.capitalizeAscii
 
 proc doccomment(str: string): string =
   str.unindent.splitLines.mapIt("## " & it).join("\n")
@@ -302,13 +317,13 @@ proc arg(a: Arg): RArg =
     of NEW_ID, UNSIGNED:
       "uint32".type
     of FIXED:
-      "wl_fixed_t".type
+      "Fixed".type
     of STRING:
       "cstring".type
     of OBJECT:
       a.interface_name.ptr
     of ARRAY:
-      "wl_array".ptr)
+      "Array".ptr)
 
 proc function(name: RFuncName; args: openArray[Rarg]; ret: string; pragmas: openArray[string]; body: string): RFunction =
   RFunction(
@@ -617,14 +632,17 @@ proc parseProtocol(node: XmlNode): Protocol =
       if event.all_null and result.null_run_length < event.args.len:
         result.null_run_length = event.args.len
 
+proc opcode(ifce: Interface; message: Message; suffix: string): string =
+  let enumname = typify &"{ifce.name}_{suffix}"
+  &"{enumname}_{message.name}"
+
 proc write_opcodes(messages: seq[Message]; ifce: Interface; suffix: string) =
   if messages.len == 0: return
-  let enumname = &"{ifce.name}_{suffix}"
+  let enumname = typify &"{ifce.name}_{suffix}"
   echo fmt"""
 type {enumname}* {{.size: sizeof(uint32).}} = enum"""
   for message in messages:
-    echo fmt"""
-  {enumname}_{message.name}"""
+    echo "  ", opcode(ifce, message, suffix)
 
   var f = function("since", [arg("e", enumname)], "int", [],
     "case e")
@@ -639,13 +657,13 @@ proc write_type(a: Arg) =
   of NEW_ID, UNSIGNED:
     stdout.write("uint32")
   of FIXED:
-    stdout.write("wl_fixed_t")
+    stdout.write("Fixed")
   of STRING:
     stdout.write("cstring")
   of OBJECT:
-    stdout.write(fmt"ptr {a.interface_name}")
+    stdout.write(fmt"ptr {a.interface_name.typify}")
   of ARRAY:
-    stdout.write("ptr wl_array")
+    stdout.write("ptr Array")
 
 proc write_stubs(messages: seq[Message]; ifce: Interface) =
   var
@@ -656,15 +674,15 @@ proc write_stubs(messages: seq[Message]; ifce: Interface) =
 
   echo ifce.function("set_user_data",
     [arg("user_data", "pointer")], "", ["inline"],
-    &"cast[ptr wl_proxy]({ifce.name}).set_user_data(user_data)")
+    &"cast[ptr Proxy]({ifce.name.identify}).set_user_data(user_data)")
 
   echo ifce.function("get_user_data",
     [], "pointer", ["inline"],
-    &"cast[ptr wl_proxy]({ifce.name}).get_user_data()")
+    &"cast[ptr Proxy]({ifce.name.identify}).get_user_data()")
 
   echo ifce.function("get_version",
     [], "uint32", ["inline"],
-    &"cast[ptr wl_proxy]({ifce.name}).get_version()")
+    &"cast[ptr Proxy]({ifce.name.identify}).get_version()")
 
   for m in messages:
     if m.destructor:
@@ -676,7 +694,7 @@ proc write_stubs(messages: seq[Message]; ifce: Interface) =
     quit(QuitFailure)
   if not has_destroy and ifce.name != "wl_display":
     echo ifce.function("destroy", [], "", ["inline"],
-      &"destroy cast[ptr wl_proxy]({ifce.name})")
+      &"destroy cast[ptr Proxy]({ifce.name.identify})")
 
   for m in messages:
     if m.new_id_count > 1:
@@ -690,7 +708,7 @@ proc write_stubs(messages: seq[Message]; ifce: Interface) =
     f.description= m.description
     for a in m.args:
       if a.`type` == NEW_ID and a.interface_name.len == 0:
-        f.args.add [arg("interface", "wl_interface".ptr),
+        f.args.add [arg("interface", "Interface".ptr),
                     arg("version", "uint32")]
       elif a.`type` == NEW_ID: discard
       else: f.args.add arg(a)
@@ -703,7 +721,7 @@ proc write_stubs(messages: seq[Message]; ifce: Interface) =
         "".type
 
     var callargs: seq[string]
-    callargs.add &"{ifce.name}_request_{m.name}.ord"
+    callargs.add fmt"""{opcode(ifce, m, "request")}.ord"""
     if ret == nil:
       callargs.add "nil"
     else:
@@ -715,7 +733,7 @@ proc write_stubs(messages: seq[Message]; ifce: Interface) =
     if ret != nil and ret.interface_name.len == 0:
       callargs.add "version"
     else:
-      callargs.add &"cast[ptr wl_proxy]({ifce.name.identify}).get_version()"
+      callargs.add &"cast[ptr Proxy]({ifce.name.identify}).get_version()"
     callargs.add if m.destructor: "WL_MARSHAL_FLAG_DESTROY" else: "0"
     for a in m.args:
       if a.`type` == NEW_ID:
@@ -725,8 +743,8 @@ proc write_stubs(messages: seq[Message]; ifce: Interface) =
       else:
         callargs.add a.name.identify
     if ret != nil and ret.interface_name.len != 0:
-      f.body.add &"cast[ptr {ret.interface_name.identify}]("
-    f.body.add fmt"cast[ptr wl_proxy]({ifce.name}).marshal_flags".call(callargs)
+      f.body.add &"cast[ptr {ret.interface_name.typify}]("
+    f.body.add fmt"cast[ptr Proxy]({ifce.name.identify}).marshal_flags".call(callargs)
     if ret != nil and ret.interface_name.len != 0:
       f.body.add ")"
     echo f
@@ -736,13 +754,13 @@ proc write_event_wrappers(messages: seq[Message]; ifce: Interface; integration: 
   proc toarg(a: Arg): RArg =
     case a.`type`
     of NEW_ID, OBJECT:
-      arg(a.name, "wl_resource".ptr)
+      arg(a.name, "Resource".ptr)
     else:
       arg(a)
-  if ifce.name == "wl_display": return
+  if ifce.name == "Display": return
   for m in messages:
     var f = function(&"{ifce.name}_send_{m.name}",
-      @[arg("resource", "wl_resource".ptr)] & m.args.map(toArg), "",
+      @[arg("resource", "Resource".ptr)] & m.args.map(toArg), "",
       ["inline", &"{integration}: \"{ifce.name}_send_{m.name}\""], "")
     f.description = Description(
       summary: &"Sends an {m.name} event to the client owning the resource.",
@@ -756,7 +774,7 @@ proc write_event_wrappers(messages: seq[Message]; ifce: Interface; integration: 
   * *{a.name}*: {a.summary}"""
     case integration
     of exportc:
-      f.body = "resource.post_event".call(@[&"{ifce.name}_event_{m.name}.ord"] & m.args.mapIt(it.name.identify))
+      f.body = "resource.post_event".call(@[&"""{opcode ifce, m, "event"}.ord"""] & m.args.mapIt(it.name.identify))
     else:
       discard
     echo f, "\n"
@@ -768,7 +786,7 @@ proc isValid*(e: {typename}; version: int): bool =
 
 proc write_enumerations(ifce: Interface) =
   for enu in ifce.enumerations:
-    let typename = fmt"{ifce.name}_{enu.name}"
+    let typename = typify fmt"{ifce.name}_{enu.name}"
     echo fmt"""
 type {typename}* {{.size: sizeof(uint32).}} = enum"""
 
@@ -785,14 +803,12 @@ func since*(e: {typename}): int =
     write_enum_validator(typename)
     echo ""
 
-proc listener(str: string; side: Side): string =
-  str.split("_").mapit(it.capitalizeAscii).join.`&` case side
-    of SERVER: "Interface"
-    of CLIENT: "Listener"
 proc listenerNative(str: string; side: Side): string =
   str.`&` case side
     of SERVER: "_interface"
     of CLIENT: "_listener"
+proc listener(str: string; side: Side): string =
+  listenerNative(str, side).typify
 
 proc write_structs(messages: seq[Message]; ifce: Interface; side: Side; integration: Integration) =
   if messages.len == 0: return
@@ -809,12 +825,12 @@ type {ifce.name.listener(side)}* = object"""
   {m.name.identify}*: proc("""
     if side == SERVER:
       echo fmt"""
-    client: ptr wl_client;
-    resource: ptr wl_resource;"""
+    client: ptr Client;
+    resource: ptr Resource;"""
     else:
       echo fmt"""
     data: pointer;
-    {ifce.name.identify}: ptr {ifce.name.identify};"""
+    {ifce.name.identify}: ptr {ifce.name.typify};"""
 
     for a in m.args:
       if side == SERVER and a.`type` == NEW_ID and a.interface_name.len == 0:
@@ -824,13 +840,13 @@ type {ifce.name.listener(side)}* = object"""
       stdout.write fmt"""
     {a.name.identify}: """
       if side == SERVER and a.`type` == OBJECT:
-        stdout.write("ptr wl_resource")
+        stdout.write("ptr Resource")
       elif side == SERVER and a.`type` == NEW_ID and a.interface_name.len == 0:
         stdout.write("uint32")
       elif side == CLIENT and a.`type` == OBJECT and a.interface_name.len == 0:
         stdout.write("pointer")
       elif side == CLIENT and a.`type` == NEW_ID:
-        stdout.write(&"ptr {a.interface_name}")
+        stdout.write(&"ptr {a.interface_name.typify}")
       else:
         write_type(a)
       echo(";")
@@ -841,7 +857,7 @@ type {ifce.name.listener(side)}* = object"""
     echo ifce.function("add_listener",
       [arg("listener", ifce.name.listener(side).ptr), arg("data", "pointer")], "int",
       ["inline"],
-      &"cast[ptr wl_proxy]({ifce.name}).add_listener(listener, data)")
+      &"cast[ptr Proxy]({ifce.name.identify}).add_listener(listener, data)")
   echo ""
 
 proc get_import_name(core: bool; side: Side): string =
@@ -920,7 +936,7 @@ proc write_messages(name: string; messages: seq[Message];
         signature.add "a"
       of FD:
         signature.add "h"
-    echo &"    wl_message(name: \"{m.name}\", signature: \"{signature}\", types: {types}),"
+    echo &"    Message(name: \"{m.name}\", signature: \"{signature}\", types: {types}),"
   echo "  ]\n"
 
 proc write_header(protocol: Protocol; side: Side; integration: Integration; opts: Opts) =
@@ -974,11 +990,11 @@ proc write_code(protocol: Protocol; integration: Integration; opts: Opts) =
     echo "export ", ept
   echo ""
 
-  echo &"var {protocol.name.identify}_types: array[{typescount}, ptr wl_interface]"
+  echo &"var {protocol.name.identify}_types: array[{typescount}, ptr Interface]"
 
-  let new_interfaces = protocol.interfaces.filterIt(it.name notin builtintypes)
+  let new_interfaces = protocol.interfaces.filterIt(it.name.typify notin builtintypes)
   for ifce in new_interfaces.sorted(cmp):
-    echo fmt"type {ifce.name.identify}* = object"
+    echo fmt"type {ifce.name.typify}* = object"
 
   if new_interfaces.len != 0:
     echo ""
@@ -988,7 +1004,7 @@ proc write_code(protocol: Protocol; integration: Integration; opts: Opts) =
     write_messages(protocol.name, i.requests, i, "requests")
     write_messages(protocol.name, i.events, i, "events")
 
-    echo &"  {i.name}_interface* {{.exportc.}} = wl_interface("
+    echo &"  {i.name}_interface* {{.exportc.}} = Interface("
     echo &"    name: \"{i.name}\","
     echo &"    version: {i.version},"
     if i.requests.len != 0:

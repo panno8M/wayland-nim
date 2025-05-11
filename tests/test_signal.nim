@@ -1,40 +1,40 @@
-import wayland/native/[server]
+import wayland/native/server as wl
 import std/[unittest]
 
 type
   signal_emit_mutable_data* {.bycopy.} = object
     count*: cint
-    remove_listener*: ptr wl_listener
+    remove_listener*: ptr wl.Listener
 
-proc signal_notify*(listener: ptr wl_listener; data: pointer) =
+proc signal_notify*(listener: ptr wl.Listener; data: pointer) =
   ##  only increase counter
   inc(((cast[ptr cint](data))[]))
 
-proc signal_notify_mutable*(listener: ptr wl_listener; data: pointer) =
+proc signal_notify_mutable*(listener: ptr wl.Listener; data: pointer) =
   let test_data = cast[ptr signal_emit_mutable_data](data)
   inc test_data.count
 
-proc signal_notify_and_remove_mutable*(listener: ptr wl_listener; data: pointer) =
+proc signal_notify_and_remove_mutable*(listener: ptr wl.Listener; data: pointer) =
   let test_data = cast[ptr signal_emit_mutable_data](data)
   signal_notify_mutable(listener, test_data)
   remove test_data.remove_listener.link
 
 suite "signal":
   test "signal_init":
-    var signal: wl_signal
+    var signal: wl.Signal
     init signal
     ##  Test if listeners' list is initialized
     check addr(signal.listener_list) == signal.listener_list.next # Maybe wl_signal implementation changed?
     check signal.listener_list.next == signal.listener_list.prev # Maybe wl_signal implementation changed?
 
   test "signal_add_get":
-    var signal: wl_signal
+    var signal: wl.Signal
     ##  we just need different values of notify
-    var l1 = wl_listener(notify: cast[wl_notify_func_t](0x1))
-    var l2 = wl_listener(notify: cast[wl_notify_func_t](0x2))
-    var l3 = wl_listener(notify: cast[wl_notify_func_t](0x3))
+    var l1 = wl.Listener(notify: cast[wl_notify_func_t](0x1))
+    var l2 = wl.Listener(notify: cast[wl_notify_func_t](0x2))
+    var l3 = wl.Listener(notify: cast[wl_notify_func_t](0x3))
     ##  one real, why not
-    var l4 = wl_listener(notify: signal_notify)
+    var l4 = wl.Listener(notify: signal_notify)
     init signal
     signal.add l1
     signal.add l2
@@ -53,8 +53,8 @@ suite "signal":
   test "signal_emit_to_one_listener":
     var count: cint = 0
     var counter: cint
-    var signal: wl_signal
-    var l1 = wl_listener(notify: signal_notify)
+    var signal: wl.Signal
+    var l1 = wl.Listener(notify: signal_notify)
     init signal
     signal.add l1
     counter = 0
@@ -66,10 +66,10 @@ suite "signal":
   test "signal_emit_to_more_listeners":
     var count: cint = 0
     var counter: cint
-    var signal: wl_signal
-    var l1 = wl_listener(notify: signal_notify)
-    var l2 = wl_listener(notify: signal_notify)
-    var l3 = wl_listener(notify: signal_notify)
+    var signal: wl.Signal
+    var l1 = wl.Listener(notify: signal_notify)
+    var l2 = wl.Listener(notify: signal_notify)
+    var l3 = wl.Listener(notify: signal_notify)
     init signal
     signal.add l1
     signal.add l2
@@ -83,10 +83,10 @@ suite "signal":
   test "signal_emit_mutable":
     var data: signal_emit_mutable_data = signal_emit_mutable_data(count: 0)
     ##  l2 will remove l3 before l3 is notified
-    var signal: wl_signal
-    var l1 = wl_listener(notify: signal_notify_mutable)
-    var l2 = wl_listener(notify: signal_notify_and_remove_mutable)
-    var l3 = wl_listener(notify: signal_notify_mutable)
+    var signal: wl.Signal
+    var l1 = wl.Listener(notify: signal_notify_mutable)
+    var l2 = wl.Listener(notify: signal_notify_and_remove_mutable)
+    var l3 = wl.Listener(notify: signal_notify_mutable)
     init signal
     signal.add l1
     signal.add l2

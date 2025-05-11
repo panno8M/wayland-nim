@@ -1,5 +1,5 @@
 import std/unittest
-import wayland/native/common
+import wayland/native/common as wl
 
 template WL_ARRAY_POISON_PTR: pointer = cast[pointer](4)
 
@@ -8,7 +8,7 @@ proc c_memset(p: pointer, value: cint, size: csize_t): pointer {.
 
 suite "array":
   test "array_init":
-    var array: wl_array
+    var array: wl.Array
 
     # fill with garbage to emulate uninitialized memory
     c_memset(addr array, 0x57, csize_t sizeof array)
@@ -19,7 +19,7 @@ suite "array":
     check array.data == nil
 
   test "array_release":
-    var array: wl_array
+    var array: wl.Array
     var `ptr`: pointer
 
     init array
@@ -40,7 +40,7 @@ suite "array":
     const iterations: uint = 3 # this is arbitrary
     # const iterations: uint = 1321 # this is arbitrary
     const datasize = csize_t sizeof mydata
-    var array: wl_array
+    var array: wl.Array
 
     init array
 
@@ -68,8 +68,8 @@ suite "array":
 
   test "array_copy":
     let iterations: int = 1529 # this is arbitrary
-    var source: wl_array
-    var copy: wl_array
+    var source: wl.Array
+    var copy: wl.Array
 
     init source
 
@@ -97,7 +97,7 @@ suite "array":
 
   test "array_for_each":
     let elements = [77, 12, 45192, 53280, 334455]
-    var array: wl_array
+    var array: wl.Array
     var p: ptr int
     var i: int
 
