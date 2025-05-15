@@ -70,8 +70,9 @@ proc removeBlock(contents: var seq[string]; header: Peg) =
 proc postprocess(contents: seq[string]): seq[string] =
   result = contents
   for line in result.mitems:
-    line = line.multiReplace(
-      ("cdecl", "nimcall"),
+    line = line.parallelReplace(
+      (peg"cdecl", "nimcall"),
+      (peg"ptr\ ptr\ {\ident}", "ptr UncheckedArray[ptr $1]"),
     )
   result.margeBlock(peg"type")
   result.margeBlock(peg"const")

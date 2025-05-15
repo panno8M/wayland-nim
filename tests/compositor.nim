@@ -389,7 +389,7 @@ proc check_error*(display: ptr wl.Display) =
   err = display.get_error
   ##  write out message about protocol error
   if err == EPROTO:
-    ec = display.get_protocol_error(addr intf, addr id)
+    ec = display.get_protocol_error(cast[ptr UncheckedArray[ptr wl.Interface]](addr intf), addr id)
     stderr.writeLine &"Client: Got protocol error {ec} on interface {intf.name} (object {id})"
   if err != 0:
     quit &"Client error: {strerror(err)}"

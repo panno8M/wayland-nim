@@ -13,7 +13,7 @@ type
     delay*: uint32
   Cursor* {.bycopy.} = object
     image_count*: cuint
-    images*: ptr ptr CursorImage
+    images*: ptr UncheckedArray[ptr CursorImage]
     name*: cstring
 proc load_cursor_theme*(name: cstring; size: cint; shm: ptr Shm): ptr CursorTheme {.nimcall,
     importc: "wl_cursor_theme_load", dynlib: "libwayland-cursor.so".}

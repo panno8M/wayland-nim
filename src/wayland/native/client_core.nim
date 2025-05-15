@@ -87,7 +87,7 @@ proc dispatch_pending*(display: ptr Display): cint {.nimcall,
     importc: "wl_display_dispatch_pending", dynlib: "libwayland-client.so".}
 proc get_error*(display: ptr Display): cint {.nimcall, importc: "wl_display_get_error",
     dynlib: "libwayland-client.so".}
-proc get_protocol_error*(display: ptr Display; `interface`: ptr ptr Interface;
+proc get_protocol_error*(display: ptr Display; `interface`: ptr UncheckedArray[ptr Interface];
                         id: ptr uint32): uint32 {.nimcall,
     importc: "wl_display_get_protocol_error", dynlib: "libwayland-client.so".}
 proc flush*(display: ptr Display): cint {.nimcall, importc: "wl_display_flush",
