@@ -227,6 +227,26 @@ proc c2nim(shell: ShellEnv; args: C2NimArgs; postprocess: proc(contents: seq[str
   result = shell.exec("c2nim", a)
   args.out.writeFile postprocess(args.out.readFile.splitLines).join("\n")
 
+type
+  ScannerFlag = enum
+    include_core_only = "--include-core-only"
+  ScannerArgs = object
+    flags: set[ScannerFlag]
+    `in`: string
+    `out`: string
+
+const
+  protocolsIn = "/usr/share/wayland-protocols"
+  protocolsOut = "src/wayland/protocols"
+  wayland = ScannerArgs(
+    flags: {include_core_only},
+    `in`: "/usr/share/wayland/wayland.xml",
+    `out`: protocolsOut/"wayland",
+  )
+
+proc `bin/wayland-nim-scanner`(shell: ShellEnv; args: ScannerArgs): ShellEnv =
+  shell.exec("bin/wayland-nim-scanner", args.flags.toSeq.mapIt($it) & @[args.`in`, "--outdir:" & args.`out`])
+
 discard cd"."
   .c2nim(version)
   .c2nim(client_core)
@@ -235,4 +255,4 @@ discard cd"."
   .c2nim(egl)
 
   .nimble("build")
-  .`bin/wayland-nim-scanner`("-c", "/usr/share/wayland/wayland.xml", "--outdir:src/wayland/protocols/wayland")
+  .`bin/wayland-nim-scanner`(wayland)
