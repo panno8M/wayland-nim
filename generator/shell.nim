@@ -1,8 +1,8 @@
 {.experimental: "dotOperators".}
-import std/[os, osproc, strtabs]
+import std/[os, osproc, strtabs, terminal]
 
 type ShellEnv* = object
-  pwd*: string
+  pwd*: string = "."
   result*: int
   `out`*: string
 
@@ -11,7 +11,10 @@ proc exec*(shell: ShellEnv; command: string;
           options: set[ProcessOption] = {poStdErrToStdOut, poUsePath}): ShellEnv =
   result = shell
   if result.result != 0: return
-  stdout.write shell.pwd & "$ "
+  if stdout.getFileHandle == 1: # console
+    stdout.styledWrite fgBlue, expandFilename(shell.pwd), fgDefault, "$ "
+  else:
+    stdout.write expandFilename(shell.pwd), "$ "
   let process = startProcess(command, result.pwd, args, env, options + {poEchoCmd})
   for line in process.lines:
     result.out.add line
