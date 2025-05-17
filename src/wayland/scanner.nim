@@ -1058,6 +1058,12 @@ proc parse(optparser: var OptParser): Opts =
 
   next optparser
 
+  case optparser.kind
+  of cmdEnd:
+    usage(QuitFailure)
+  else:
+    discard
+
   optparser.parseOptions(result)
 
   case optparser.kind # Input file
