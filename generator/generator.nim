@@ -76,36 +76,22 @@ proc postprocess(contents: seq[string]): seq[string] =
     )
   result.margeBlock(peg"type")
   result.margeBlock(peg"const")
-  result.insert("import common", 0)
 
 proc postprocess_server(contents: seq[string]): seq[string] =
   result = postprocess contents
-  var include_signal_i: int
-  for i, line in result:
-    if line =~ peg"proc\ post_event\*.*":
-      include_signal_i = i
 
-  result.insert("include includes/signal", include_signal_i)
   result.removeBlock(peg"proc\ init\*\(signal.*")
   result.removeBlock(peg"proc\ add\*\(signal.*")
   result.removeBlock(peg"proc\ get\*\(signal.*")
   result.removeBlock(peg"proc\ emit\*\(signal.*")
-
-proc postprocess_cursor(contents: seq[string]): seq[string] =
-  result = postprocess contents
-  result.insert("import server", 1)
-  result.insert("type CursorTheme* = object", 2)
-
-proc postprocess_egl(contents: seq[string]): seq[string] =
-  result = postprocess contents
-  result.insert("import client", 1)
-  result.insert("type EglWindow* = object", 2)
 
 const
   defs = "generator/defs.c2nim"
   deps_server = "generator/deps-server.c"
   deps_client = "generator/deps-client.c"
   outDir = "src/wayland/native"
+  `outDir/gen` = outDir & "/gen"
+  `outDir/gen/includes` = `outDir/gen` & "/includes"
 
 type C2NimArgs = object
   `in`: seq[string]
@@ -121,31 +107,32 @@ var
 
   client_core = C2NimArgs(
     `in`: @[defs, deps_client, clientSourceDir/"wayland-client-core.h"],
-    `out`: outDir/"client_core.nim",
+    `out`: `outDir/gen/includes`/"client_core.nim",
     dynlib: "libwayland-client.so",
   )
   server_core = C2NimArgs(
     `in`: @[defs, deps_server, serverSourceDir/"wayland-server-core.h"],
-    `out`: outDir/"server_core.nim",
+    `out`: `outDir/gen/includes`/"server_core.nim",
     dynlib: "libwayland-server.so",
   )
   version = C2NimArgs(
     `in`: @[defs, versionSourceDir/"wayland-version.h"],
-    `out`: outDir/"version.nim",
+    `out`: `outDir/gen`/"version.nim",
     )
   cursor = C2NimArgs(
     `in`: @[defs, cursorSourceDir/"wayland-cursor.h"],
-    `out`: outDir/"cursor.nim",
+    `out`: `outDir/gen/includes`/"cursor.nim",
     dynlib: "libwayland-cursor.so",
   )
   egl = C2NimArgs(
     `in`: @[defs, eglSourceDir/"wayland-egl-core.h"],
-    `out`: outDir/"egl.nim",
+    `out`: `outDir/gen/includes`/"egl.nim",
     dynlib: "libwayland-egl.so",
   )
 
 proc c2nim(shell: ShellEnv; args: C2NimArgs; postprocess: proc(contents: seq[string]): seq[string] = postprocess): ShellEnv =
   var a = args.in.map(preprocess)
+  createDir args.out.parentDir
   a.add "--out:" & args.out
   if args.dynlib.len != 0:
     a.add &"--dynlib:\"{args.dynlib}\""
@@ -244,8 +231,8 @@ discard cd"."
   .c2nim(version)
   .c2nim(client_core)
   .c2nim(server_core, postprocess_server)
-  .c2nim(cursor, postprocess_cursor)
-  .c2nim(egl, postprocess_egl)
+  .c2nim(cursor)
+  .c2nim(egl)
 
   .nimble("build")
   .`bin/wayland-nim-scanner`("-c", "server", "/usr/share/wayland/wayland.xml", "src/wayland/native/server_protocol.nim", "--import:protocol_code", "--export:protocol_code")

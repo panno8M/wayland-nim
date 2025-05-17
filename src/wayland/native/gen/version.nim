@@ -1,4 +1,3 @@
-import common
 const
   WAYLAND_VERSION_MAJOR* = 1
   WAYLAND_VERSION_MINOR* = 23
