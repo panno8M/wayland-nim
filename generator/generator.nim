@@ -238,10 +238,31 @@ type
 const
   protocolsIn = "/usr/share/wayland-protocols"
   protocolsOut = "src/wayland/protocols"
+  stable = "stable"
   wayland = ScannerArgs(
     flags: {include_core_only},
     `in`: "/usr/share/wayland/wayland.xml",
     `out`: protocolsOut/"wayland",
+  )
+  linux_dmabuf = ScannerArgs(
+    `in`: protocolsIn/stable/"linux-dmabuf/linux-dmabuf-v1.xml",
+    `out`: protocolsOut/stable/"linuxdmabuf",
+  )
+  presentation_time = ScannerArgs(
+    `in`: protocolsIn/stable/"presentation-time/presentation-time.xml",
+    `out`: protocolsOut/stable/"presentationtime",
+  )
+  tablet = ScannerArgs(
+    `in`: protocolsIn/stable/"tablet/tablet-v2.xml",
+    `out`: protocolsOut/stable/"tablet",
+  )
+  viewporter = ScannerArgs(
+    `in`: protocolsIn/stable/"viewporter/viewporter.xml",
+    `out`: protocolsOut/stable/"viewporter",
+  )
+  xdg_shell = ScannerArgs(
+    `in`: protocolsIn/stable/"xdg-shell/xdg-shell.xml",
+    `out`: protocolsOut/stable/"xdgshell",
   )
 
 proc `bin/wayland-nim-scanner`(shell: ShellEnv; args: ScannerArgs): ShellEnv =
@@ -256,3 +277,8 @@ discard cd"."
 
   .nimble("build")
   .`bin/wayland-nim-scanner`(wayland)
+  .`bin/wayland-nim-scanner`(linux_dmabuf)
+  .`bin/wayland-nim-scanner`(presentation_time)
+  .`bin/wayland-nim-scanner`(tablet)
+  .`bin/wayland-nim-scanner`(viewporter)
+  .`bin/wayland-nim-scanner`(xdg_shell)
