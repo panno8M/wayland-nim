@@ -235,6 +235,4 @@ discard cd"."
   .c2nim(egl)
 
   .nimble("build")
-  .`bin/wayland-nim-scanner`("-c", "server", "/usr/share/wayland/wayland.xml", "src/wayland/native/server_protocol.nim", "--import:protocol_code", "--export:protocol_code")
-  .`bin/wayland-nim-scanner`("-c", "client", "/usr/share/wayland/wayland.xml", "src/wayland/native/client_protocol.nim", "--import:protocol_code", "--export:protocol_code")
-  .`bin/wayland-nim-scanner`("-c", "code", "/usr/share/wayland/wayland.xml", "src/wayland/native/protocol_code.nim")
+  .`bin/wayland-nim-scanner`("-c", "/usr/share/wayland/wayland.xml", "--outdir:src/wayland/protocols/wayland")
