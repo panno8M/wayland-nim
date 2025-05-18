@@ -2,6 +2,7 @@
 {.warning[UnusedImport]:off.}
 import wayland/native/client
 import wayland/native/common
+import wayland/protocols/stable/xdgShell/client as xdgShell_client
 import code
 export code
 

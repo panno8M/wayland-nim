@@ -260,6 +260,8 @@ const
       "wayland/protocols/stable/xdgShell"],
     "xdg-toplevel-tag": @[
       "wayland/protocols/stable/xdgShell"],
+    "xdg-decoration-unstable": @[
+      "wayland/protocols/stable/xdgShell"],
   }
 
 iterator collectProtocols(root: string): ProtocolInfo =

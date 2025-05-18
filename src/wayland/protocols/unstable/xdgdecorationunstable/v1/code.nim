@@ -2,6 +2,7 @@
 {.warning[UnusedImport]:off.}
 import wayland/native/common
 import wayland/protocols/wayland/code as wayland_code
+import wayland/protocols/stable/xdgShell/code as xdgShell_code
 
 var xdgDecorationUnstableV1_types: array[3, ptr Interface]
 type ZxdgDecorationManagerV1* = object
