@@ -2,7 +2,7 @@
 {.warning[UnusedImport]:off.}
 import wayland/native/client
 import wayland/native/common
-import wayland/protocols/stable/tablet/client as tablet_client
+import wayland/protocols/stable/tablet/v2/client as tablet_client
 import code
 export code
 

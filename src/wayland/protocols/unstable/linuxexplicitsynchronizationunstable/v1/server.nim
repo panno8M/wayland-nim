@@ -2,24 +2,25 @@
 {.warning[UnusedImport]:off.}
 import wayland/native/server
 import wayland/native/common
-import wayland/protocols/stable/tablet/v2/server as tablet_server
 import code
 export code
 
-## The cursor_shape_v1 SERVER protocol
-## ###################################
+## The zwp_linux_explicit_synchronization_unstable_v1 SERVER protocol
+## ##################################################################
 ## 
 ## Interfaces
 ## ==========
 ## 
-## * wp_cursor_shape_manager_v1
-## * wp_cursor_shape_device_v1
+## * zwp_linux_explicit_synchronization_v1
+## * zwp_linux_surface_synchronization_v1
+## * zwp_linux_buffer_release_v1
 ## 
 ## Copyright
 ## =========
 ## 
-## Copyright 2018 The Chromium Authors
-## Copyright 2023 Simon Ser
+## Copyright 2016 The Chromium Authors.
+## Copyright 2017 Intel Corporation
+## Copyright 2018 Collabora, Ltd
 ## 
 ## Permission is hereby granted, free of charge, to any person obtaining a
 ## copy of this software and associated documentation files (the "Software"),
@@ -27,9 +28,11 @@ export code
 ## the rights to use, copy, modify, merge, publish, distribute, sublicense,
 ## and/or sell copies of the Software, and to permit persons to whom the
 ## Software is furnished to do so, subject to the following conditions:
+## 
 ## The above copyright notice and this permission notice (including the next
 ## paragraph) shall be included in all copies or substantial portions of the
 ## Software.
+## 
 ## THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 ## IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 ## FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
@@ -39,33 +42,46 @@ export code
 ## DEALINGS IN THE SOFTWARE.
 ## 
 
-type WpCursorShapeManagerV1Interface* = object
+type ZwpLinuxExplicitSynchronizationV1Interface* = object
   destroy*: proc(
     client: ptr Client;
     resource: ptr Resource;
   ) {.nimcall.}
-  getPointer*: proc(
+  getSynchronization*: proc(
     client: ptr Client;
     resource: ptr Resource;
-    cursorShapeDevice: uint32;
-    pointer: ptr Resource;
-  ) {.nimcall.}
-  getTabletToolV2*: proc(
-    client: ptr Client;
-    resource: ptr Resource;
-    cursorShapeDevice: uint32;
-    tabletTool: ptr Resource;
+    id: uint32;
+    surface: ptr Resource;
   ) {.nimcall.}
 
-type WpCursorShapeDeviceV1Interface* = object
+type ZwpLinuxSurfaceSynchronizationV1Interface* = object
   destroy*: proc(
     client: ptr Client;
     resource: ptr Resource;
   ) {.nimcall.}
-  setShape*: proc(
+  setAcquireFence*: proc(
     client: ptr Client;
     resource: ptr Resource;
-    serial: uint32;
-    shape: uint32;
+    fd: int32;
   ) {.nimcall.}
+  getRelease*: proc(
+    client: ptr Client;
+    resource: ptr Resource;
+    release: uint32;
+  ) {.nimcall.}
+
+proc zwpLinuxBufferReleaseV1SendFencedRelease*(resource: ptr Resource; fence: int32) {.inline, exportc: "zwp_linux_buffer_release_v1_send_fenced_release".} =
+  ## Sends an fenced_release event to the client owning the resource.
+  ## 
+  ## **params**:
+  ## * *resource*: The client's resource
+  ## * *fence*: fence for last operation on buffer
+  resource.post_event(ZwpLinuxBufferReleaseV1Event_fenced_release.ord, fence)
+
+proc zwpLinuxBufferReleaseV1SendImmediateRelease*(resource: ptr Resource) {.inline, exportc: "zwp_linux_buffer_release_v1_send_immediate_release".} =
+  ## Sends an immediate_release event to the client owning the resource.
+  ## 
+  ## **params**:
+  ## * *resource*: The client's resource
+  resource.post_event(ZwpLinuxBufferReleaseV1Event_immediate_release.ord)
 

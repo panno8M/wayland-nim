@@ -2,24 +2,24 @@
 {.warning[UnusedImport]:off.}
 import wayland/native/server
 import wayland/native/common
-import wayland/protocols/stable/tablet/v2/server as tablet_server
 import code
 export code
 
-## The cursor_shape_v1 SERVER protocol
-## ###################################
+## The xdg_foreign_unstable_v2 SERVER protocol
+## ###########################################
 ## 
 ## Interfaces
 ## ==========
 ## 
-## * wp_cursor_shape_manager_v1
-## * wp_cursor_shape_device_v1
+## * zxdg_exporter_v2
+## * zxdg_importer_v2
+## * zxdg_exported_v2
+## * zxdg_imported_v2
 ## 
 ## Copyright
 ## =========
 ## 
-## Copyright 2018 The Chromium Authors
-## Copyright 2023 Simon Ser
+## Copyright © 2015-2016 Red Hat Inc.
 ## 
 ## Permission is hereby granted, free of charge, to any person obtaining a
 ## copy of this software and associated documentation files (the "Software"),
@@ -27,45 +27,73 @@ export code
 ## the rights to use, copy, modify, merge, publish, distribute, sublicense,
 ## and/or sell copies of the Software, and to permit persons to whom the
 ## Software is furnished to do so, subject to the following conditions:
+## 
 ## The above copyright notice and this permission notice (including the next
 ## paragraph) shall be included in all copies or substantial portions of the
 ## Software.
+## 
 ## THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 ## IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-## FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+## FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
 ## THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 ## LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 ## FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 ## DEALINGS IN THE SOFTWARE.
 ## 
 
-type WpCursorShapeManagerV1Interface* = object
+type ZxdgExporterV2Interface* = object
   destroy*: proc(
     client: ptr Client;
     resource: ptr Resource;
   ) {.nimcall.}
-  getPointer*: proc(
+  exportToplevel*: proc(
     client: ptr Client;
     resource: ptr Resource;
-    cursorShapeDevice: uint32;
-    pointer: ptr Resource;
-  ) {.nimcall.}
-  getTabletToolV2*: proc(
-    client: ptr Client;
-    resource: ptr Resource;
-    cursorShapeDevice: uint32;
-    tabletTool: ptr Resource;
+    id: uint32;
+    surface: ptr Resource;
   ) {.nimcall.}
 
-type WpCursorShapeDeviceV1Interface* = object
+type ZxdgImporterV2Interface* = object
   destroy*: proc(
     client: ptr Client;
     resource: ptr Resource;
   ) {.nimcall.}
-  setShape*: proc(
+  importToplevel*: proc(
     client: ptr Client;
     resource: ptr Resource;
-    serial: uint32;
-    shape: uint32;
+    id: uint32;
+    handle: cstring;
   ) {.nimcall.}
+
+type ZxdgExportedV2Interface* = object
+  destroy*: proc(
+    client: ptr Client;
+    resource: ptr Resource;
+  ) {.nimcall.}
+
+proc zxdgExportedV2SendHandle*(resource: ptr Resource; handle: cstring) {.inline, exportc: "zxdg_exported_v2_send_handle".} =
+  ## Sends an handle event to the client owning the resource.
+  ## 
+  ## **params**:
+  ## * *resource*: The client's resource
+  ## * *handle*: the exported surface handle
+  resource.post_event(ZxdgExportedV2Event_handle.ord, handle)
+
+type ZxdgImportedV2Interface* = object
+  destroy*: proc(
+    client: ptr Client;
+    resource: ptr Resource;
+  ) {.nimcall.}
+  setParentOf*: proc(
+    client: ptr Client;
+    resource: ptr Resource;
+    surface: ptr Resource;
+  ) {.nimcall.}
+
+proc zxdgImportedV2SendDestroyed*(resource: ptr Resource) {.inline, exportc: "zxdg_imported_v2_send_destroyed".} =
+  ## Sends an destroyed event to the client owning the resource.
+  ## 
+  ## **params**:
+  ## * *resource*: The client's resource
+  resource.post_event(ZxdgImportedV2Event_destroyed.ord)
 

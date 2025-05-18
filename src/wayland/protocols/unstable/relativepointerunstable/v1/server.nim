@@ -2,24 +2,23 @@
 {.warning[UnusedImport]:off.}
 import wayland/native/server
 import wayland/native/common
-import wayland/protocols/stable/tablet/v2/server as tablet_server
 import code
 export code
 
-## The cursor_shape_v1 SERVER protocol
-## ###################################
+## The relative_pointer_unstable_v1 SERVER protocol
+## ################################################
 ## 
 ## Interfaces
 ## ==========
 ## 
-## * wp_cursor_shape_manager_v1
-## * wp_cursor_shape_device_v1
+## * zwp_relative_pointer_manager_v1
+## * zwp_relative_pointer_v1
 ## 
 ## Copyright
 ## =========
 ## 
-## Copyright 2018 The Chromium Authors
-## Copyright 2023 Simon Ser
+## Copyright © 2014      Jonas Ådahl
+## Copyright © 2015      Red Hat Inc.
 ## 
 ## Permission is hereby granted, free of charge, to any person obtaining a
 ## copy of this software and associated documentation files (the "Software"),
@@ -27,45 +26,48 @@ export code
 ## the rights to use, copy, modify, merge, publish, distribute, sublicense,
 ## and/or sell copies of the Software, and to permit persons to whom the
 ## Software is furnished to do so, subject to the following conditions:
+## 
 ## The above copyright notice and this permission notice (including the next
 ## paragraph) shall be included in all copies or substantial portions of the
 ## Software.
+## 
 ## THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 ## IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-## FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+## FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
 ## THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 ## LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 ## FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 ## DEALINGS IN THE SOFTWARE.
 ## 
 
-type WpCursorShapeManagerV1Interface* = object
+type ZwpRelativePointerManagerV1Interface* = object
   destroy*: proc(
     client: ptr Client;
     resource: ptr Resource;
   ) {.nimcall.}
-  getPointer*: proc(
+  getRelativePointer*: proc(
     client: ptr Client;
     resource: ptr Resource;
-    cursorShapeDevice: uint32;
+    id: uint32;
     pointer: ptr Resource;
   ) {.nimcall.}
-  getTabletToolV2*: proc(
-    client: ptr Client;
-    resource: ptr Resource;
-    cursorShapeDevice: uint32;
-    tabletTool: ptr Resource;
-  ) {.nimcall.}
 
-type WpCursorShapeDeviceV1Interface* = object
+type ZwpRelativePointerV1Interface* = object
   destroy*: proc(
     client: ptr Client;
     resource: ptr Resource;
   ) {.nimcall.}
-  setShape*: proc(
-    client: ptr Client;
-    resource: ptr Resource;
-    serial: uint32;
-    shape: uint32;
-  ) {.nimcall.}
+
+proc zwpRelativePointerV1SendRelativeMotion*(resource: ptr Resource; utimeHi: uint32; utimeLo: uint32; dx: Fixed; dy: Fixed; dxUnaccel: Fixed; dyUnaccel: Fixed) {.inline, exportc: "zwp_relative_pointer_v1_send_relative_motion".} =
+  ## Sends an relative_motion event to the client owning the resource.
+  ## 
+  ## **params**:
+  ## * *resource*: The client's resource
+  ## * *utime_hi*: high 32 bits of a 64 bit timestamp with microsecond granularity
+  ## * *utime_lo*: low 32 bits of a 64 bit timestamp with microsecond granularity
+  ## * *dx*: the x component of the motion vector
+  ## * *dy*: the y component of the motion vector
+  ## * *dx_unaccel*: the x component of the unaccelerated motion vector
+  ## * *dy_unaccel*: the y component of the unaccelerated motion vector
+  resource.post_event(ZwpRelativePointerV1Event_relative_motion.ord, utimeHi, utimeLo, dx, dy, dxUnaccel, dyUnaccel)
 

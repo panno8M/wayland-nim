@@ -2,7 +2,7 @@
 {.warning[UnusedImport]:off.}
 import wayland/native/common
 import wayland/protocols/wayland/code as wayland_code
-import wayland/protocols/stable/tablet/code as tablet_code
+import wayland/protocols/stable/tablet/v2/code as tablet_code
 
 var cursorShapeV1_types: array[6, ptr Interface]
 type WpCursorShapeDeviceV1* = object

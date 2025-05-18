@@ -2,24 +2,22 @@
 {.warning[UnusedImport]:off.}
 import wayland/native/server
 import wayland/native/common
-import wayland/protocols/stable/tablet/v2/server as tablet_server
 import code
 export code
 
-## The cursor_shape_v1 SERVER protocol
-## ###################################
+## The input_timestamps_unstable_v1 SERVER protocol
+## ################################################
 ## 
 ## Interfaces
 ## ==========
 ## 
-## * wp_cursor_shape_manager_v1
-## * wp_cursor_shape_device_v1
+## * zwp_input_timestamps_manager_v1
+## * zwp_input_timestamps_v1
 ## 
 ## Copyright
 ## =========
 ## 
-## Copyright 2018 The Chromium Authors
-## Copyright 2023 Simon Ser
+## Copyright © 2017 Collabora, Ltd.
 ## 
 ## Permission is hereby granted, free of charge, to any person obtaining a
 ## copy of this software and associated documentation files (the "Software"),
@@ -27,45 +25,57 @@ export code
 ## the rights to use, copy, modify, merge, publish, distribute, sublicense,
 ## and/or sell copies of the Software, and to permit persons to whom the
 ## Software is furnished to do so, subject to the following conditions:
+## 
 ## The above copyright notice and this permission notice (including the next
 ## paragraph) shall be included in all copies or substantial portions of the
 ## Software.
+## 
 ## THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 ## IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-## FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL
+## FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL
 ## THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 ## LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 ## FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 ## DEALINGS IN THE SOFTWARE.
 ## 
 
-type WpCursorShapeManagerV1Interface* = object
+type ZwpInputTimestampsManagerV1Interface* = object
   destroy*: proc(
     client: ptr Client;
     resource: ptr Resource;
   ) {.nimcall.}
-  getPointer*: proc(
+  getKeyboardTimestamps*: proc(
     client: ptr Client;
     resource: ptr Resource;
-    cursorShapeDevice: uint32;
+    id: uint32;
+    keyboard: ptr Resource;
+  ) {.nimcall.}
+  getPointerTimestamps*: proc(
+    client: ptr Client;
+    resource: ptr Resource;
+    id: uint32;
     pointer: ptr Resource;
   ) {.nimcall.}
-  getTabletToolV2*: proc(
+  getTouchTimestamps*: proc(
     client: ptr Client;
     resource: ptr Resource;
-    cursorShapeDevice: uint32;
-    tabletTool: ptr Resource;
+    id: uint32;
+    touch: ptr Resource;
   ) {.nimcall.}
 
-type WpCursorShapeDeviceV1Interface* = object
+type ZwpInputTimestampsV1Interface* = object
   destroy*: proc(
     client: ptr Client;
     resource: ptr Resource;
   ) {.nimcall.}
-  setShape*: proc(
-    client: ptr Client;
-    resource: ptr Resource;
-    serial: uint32;
-    shape: uint32;
-  ) {.nimcall.}
+
+proc zwpInputTimestampsV1SendTimestamp*(resource: ptr Resource; tvSecHi: uint32; tvSecLo: uint32; tvNsec: uint32) {.inline, exportc: "zwp_input_timestamps_v1_send_timestamp".} =
+  ## Sends an timestamp event to the client owning the resource.
+  ## 
+  ## **params**:
+  ## * *resource*: The client's resource
+  ## * *tv_sec_hi*: high 32 bits of the seconds part of the timestamp
+  ## * *tv_sec_lo*: low 32 bits of the seconds part of the timestamp
+  ## * *tv_nsec*: nanoseconds part of the timestamp
+  resource.post_event(ZwpInputTimestampsV1Event_timestamp.ord, tvSecHi, tvSecLo, tvNsec)
 
