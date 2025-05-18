@@ -234,6 +234,7 @@ type
     flags: set[ScannerFlag]
     `in`: string
     `out`: string
+    requires: seq[string]
 
 const
   protocolsIn = "/usr/share/wayland-protocols"
@@ -243,8 +244,11 @@ proc initScannerArgs(status, name: string; ver: string = ""; flags: set[ScannerF
   ScannerArgs(
     flags: flags,
     `in`: protocolsIn/status/name/name & (if ver == "": ".xml" else: &"-{ver}.xml"),
-    `out`: protocolsOut/status/nimIdentNormalize(name.replace("-", "_")) & (if status == "stable": "" else: ver)
+    `out`: protocolsOut/status/nimIdentNormalize(name.replace("-", "_"))/(if status == "stable": "" else: ver)
   )
+proc require(args: ScannerArgs; name: string): ScannerArgs =
+  result = args
+  result.requires.add name
 
 const
   wayland = ScannerArgs(
@@ -260,7 +264,45 @@ const
   viewporter = initScannerArgs(stable, "viewporter")
   xdg_shell = initScannerArgs(stable, "xdg-shell")
 
+  staging = "staging"
+  alpha_modifier = initScannerArgs(staging, "alpha-modifier", "v1")
+  color_management = initScannerArgs(staging, "color-management", "v1")
+  color_representation = initScannerArgs(staging, "color-representation", "v1")
+  commit_timing = initScannerArgs(staging, "commit-timing", "v1")
+  content_type = initScannerArgs(staging, "content-type", "v1")
+  cursor_shape = initScannerArgs(staging, "cursor-shape", "v1")
+    .require("wayland/protocols/stable/tablet")
+  drm_lease = initScannerArgs(staging, "drm-lease", "v1")
+  ext_data_control = initScannerArgs(staging, "ext-data-control", "v1")
+  ext_foreign_toplevel_list = initScannerArgs(staging, "ext-foreign-toplevel-list", "v1")
+  ext_idle_notify = initScannerArgs(staging, "ext-idle-notify", "v1")
+  ext_image_capture_source = initScannerArgs(staging, "ext-image-capture-source", "v1")
+    .require("wayland/protocols/staging/extForeignToplevelList/v1")
+  ext_image_copy_capture = initScannerArgs(staging, "ext-image-copy-capture", "v1")
+    .require("wayland/protocols/staging/extImageCaptureSource/v1")
+  ext_session_lock = initScannerArgs(staging, "ext-session-lock", "v1")
+  ext_transient_seat = initScannerArgs(staging, "ext-transient-seat", "v1")
+  ext_workspace = initScannerArgs(staging, "ext-workspace", "v1")
+  fifo = initScannerArgs(staging, "fifo", "v1")
+  fractional_scale = initScannerArgs(staging, "fractional-scale", "v1")
+  linux_drm_syncobj = initScannerArgs(staging, "linux-drm-syncobj", "v1")
+  security_context = initScannerArgs(staging, "security-context", "v1")
+  single_pixel_buffer = initScannerArgs(staging, "single-pixel-buffer", "v1")
+  tearing_control = initScannerArgs(staging, "tearing-control", "v1")
+  xdg_activation = initScannerArgs(staging, "xdg-activation", "v1")
+  xdg_dialog = initScannerArgs(staging, "xdg-dialog", "v1")
+    .require("wayland/protocols/stable/xdgShell")
+  xdg_system_bell = initScannerArgs(staging, "xdg-system-bell", "v1")
+  xdg_toplevel_drag = initScannerArgs(staging, "xdg-toplevel-drag", "v1")
+    .require("wayland/protocols/stable/xdgShell")
+  xdg_toplevel_icon = initScannerArgs(staging, "xdg-toplevel-icon", "v1")
+    .require("wayland/protocols/stable/xdgShell")
+  xdg_toplevel_tag = initScannerArgs(staging, "xdg-toplevel-tag", "v1")
+    .require("wayland/protocols/stable/xdgShell")
+  xwayland_shell = initScannerArgs(staging, "xwayland-shell", "v1")
+
 proc `bin/wayland-nim-scanner`(shell: ShellEnv; args: ScannerArgs): ShellEnv =
+  # shell.exec("bin/wayland-nim-scanner", args.flags.toSeq.mapIt($it) & @[args.`in`, "--outdir:" & args.`out`] & args.requires.mapIt("--require:" & it))
   shell.exec("bin/wayland-nim-scanner", args.flags.toSeq.mapIt($it) & @[args.`in`, "--outdir:" & args.`out`])
 
 removeDir "src/wayland/native/gen"
@@ -280,3 +322,31 @@ discard cd"."
   .`bin/wayland-nim-scanner`(tablet)
   .`bin/wayland-nim-scanner`(viewporter)
   .`bin/wayland-nim-scanner`(xdg_shell)
+  .`bin/wayland-nim-scanner`(alpha_modifier)
+  .`bin/wayland-nim-scanner`(color_management)
+  .`bin/wayland-nim-scanner`(color_representation)
+  .`bin/wayland-nim-scanner`(commit_timing)
+  .`bin/wayland-nim-scanner`(content_type)
+  .`bin/wayland-nim-scanner`(cursor_shape)
+  .`bin/wayland-nim-scanner`(drm_lease)
+  .`bin/wayland-nim-scanner`(ext_data_control)
+  .`bin/wayland-nim-scanner`(ext_foreign_toplevel_list)
+  .`bin/wayland-nim-scanner`(ext_idle_notify)
+  .`bin/wayland-nim-scanner`(ext_image_capture_source)
+  .`bin/wayland-nim-scanner`(ext_image_copy_capture)
+  .`bin/wayland-nim-scanner`(ext_session_lock)
+  .`bin/wayland-nim-scanner`(ext_transient_seat)
+  .`bin/wayland-nim-scanner`(ext_workspace)
+  .`bin/wayland-nim-scanner`(fifo)
+  .`bin/wayland-nim-scanner`(fractional_scale)
+  .`bin/wayland-nim-scanner`(linux_drm_syncobj)
+  .`bin/wayland-nim-scanner`(security_context)
+  .`bin/wayland-nim-scanner`(single_pixel_buffer)
+  .`bin/wayland-nim-scanner`(tearing_control)
+  .`bin/wayland-nim-scanner`(xdg_activation)
+  .`bin/wayland-nim-scanner`(xdg_dialog)
+  .`bin/wayland-nim-scanner`(xdg_system_bell)
+  .`bin/wayland-nim-scanner`(xdg_toplevel_drag)
+  .`bin/wayland-nim-scanner`(xdg_toplevel_icon)
+  .`bin/wayland-nim-scanner`(xdg_toplevel_tag)
+  .`bin/wayland-nim-scanner`(xwayland_shell)
