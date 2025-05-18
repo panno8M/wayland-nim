@@ -1,4 +1,4 @@
-import std/[strformat, xmlparser, xmltree, strutils, sequtils, parseutils, streams, deques, parseopt, algorithm, os]
+import std/[strformat, xmlparser, xmltree, strutils, sequtils, parseutils, streams, deques, parseopt, algorithm, os, pegs]
 import macros
 
 import native/gen/[version]
@@ -23,6 +23,7 @@ type Opts = object
   strict: bool
   imports: seq[string]
   exports: seq[string]
+  requires: seq[string]
 
 type
   Side = enum
@@ -46,7 +47,11 @@ options:
                                 of wayland-client.h.
     -s,  --strict               exit immediately with an error if DTD
                                 verification fails.
-    -o,  --outdir:DIR           specify output directory (default: $(pwd))"""
+    -o,  --outdir:DIR           specify output directory (default: $(pwd))
+    -r,  --require:MODULE       If the protocol depends on another protocol,
+                                use this option to specify it.
+                                e.g. --requre:wayland/protocols/staging/tablet"""
+
   quit(ret)
 
 proc scanner_version(ret: int) =
@@ -948,6 +953,14 @@ proc write_header(protocol: Protocol; side: Side; integration: Integration; opts
   echo &"""
 import {get_import_name(protocol.core_headers, side)}
 import wayland/native/common"""
+  for require in opts.requires:
+    var (path, module, _) = require.splitFile
+    if module =~ peg"v[0-9]+":
+      (path, module, _) = path.splitFile
+    let s = case side
+    of CLIENT: "client"
+    of SERVER: "server"
+    echo "import ", require, "/", s, " as ", module, "_", s
   for ipt in opts.imports:
     echo "import ", ipt
   for ept in opts.exports:
@@ -991,6 +1004,11 @@ proc write_code(protocol: Protocol; integration: Integration; opts: Opts) =
   echo "import wayland/native/common"
   if not protocol.core_headers:
     echo "import wayland/protocols/wayland/code as wayland_code"
+  for require in opts.requires:
+    var (path, module, _) = require.splitFile
+    if module =~ peg"v[0-9]+":
+      (path, module, _) = path.splitFile
+    echo "import ", require, "/code", " as ", module, "_code"
   for ipt in opts.imports:
     echo "import ", ipt
   for ept in opts.exports:
@@ -1052,6 +1070,9 @@ proc parseOptions(optparser: var OptParser; result: var Opts) =
         next optparser
       of "o", "outdir":
         result.output_dir = optparser.val
+        next optparser
+      of "r", "require":
+        result.requires.add optparser.val
         next optparser
       else:
         usage(QuitFailure)
