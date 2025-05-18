@@ -238,32 +238,27 @@ type
 const
   protocolsIn = "/usr/share/wayland-protocols"
   protocolsOut = "src/wayland/protocols"
-  stable = "stable"
+
+proc initScannerArgs(status, name: string; ver: string = ""; flags: set[ScannerFlag] = {}): ScannerArgs =
+  ScannerArgs(
+    flags: flags,
+    `in`: protocolsIn/status/name/name & (if ver == "": ".xml" else: &"-{ver}.xml"),
+    `out`: protocolsOut/status/nimIdentNormalize(name.replace("-", "_")) & (if status == "stable": "" else: ver)
+  )
+
+const
   wayland = ScannerArgs(
     flags: {include_core_only},
     `in`: "/usr/share/wayland/wayland.xml",
     `out`: protocolsOut/"wayland",
   )
-  linux_dmabuf = ScannerArgs(
-    `in`: protocolsIn/stable/"linux-dmabuf/linux-dmabuf-v1.xml",
-    `out`: protocolsOut/stable/"linuxdmabuf",
-  )
-  presentation_time = ScannerArgs(
-    `in`: protocolsIn/stable/"presentation-time/presentation-time.xml",
-    `out`: protocolsOut/stable/"presentationtime",
-  )
-  tablet = ScannerArgs(
-    `in`: protocolsIn/stable/"tablet/tablet-v2.xml",
-    `out`: protocolsOut/stable/"tablet",
-  )
-  viewporter = ScannerArgs(
-    `in`: protocolsIn/stable/"viewporter/viewporter.xml",
-    `out`: protocolsOut/stable/"viewporter",
-  )
-  xdg_shell = ScannerArgs(
-    `in`: protocolsIn/stable/"xdg-shell/xdg-shell.xml",
-    `out`: protocolsOut/stable/"xdgshell",
-  )
+
+  stable = "stable"
+  linux_dmabuf = initScannerArgs(stable, "linux-dmabuf", "v1")
+  presentation_time = initScannerArgs(stable, "presentation-time")
+  tablet = initScannerArgs(stable, "tablet", "v2")
+  viewporter = initScannerArgs(stable, "viewporter")
+  xdg_shell = initScannerArgs(stable, "xdg-shell")
 
 proc `bin/wayland-nim-scanner`(shell: ShellEnv; args: ScannerArgs): ShellEnv =
   shell.exec("bin/wayland-nim-scanner", args.flags.toSeq.mapIt($it) & @[args.`in`, "--outdir:" & args.`out`])
