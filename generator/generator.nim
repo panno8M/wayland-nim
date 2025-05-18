@@ -263,6 +263,9 @@ const
 proc `bin/wayland-nim-scanner`(shell: ShellEnv; args: ScannerArgs): ShellEnv =
   shell.exec("bin/wayland-nim-scanner", args.flags.toSeq.mapIt($it) & @[args.`in`, "--outdir:" & args.`out`])
 
+removeDir "src/wayland/native/gen"
+removeDir "src/wayland/protocols"
+
 discard cd"."
   .c2nim(version)
   .c2nim(client_core)
