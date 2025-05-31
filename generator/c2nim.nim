@@ -102,5 +102,6 @@ proc c2nim*(shell: ShellEnv; args: C2NimArgs): ShellEnv =
   if args.exportdll.len != 0:
     a.add "--exportdll:" & args.exportdll
   result = shell.exec("c2nim", a)
-  args.out.writeFile args.postprocess(readFile(args.out))
+  if args.postprocess != nil:
+    args.out.writeFile args.postprocess(readFile(args.out))
   removeDir "tmp"
