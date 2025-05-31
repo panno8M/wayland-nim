@@ -1,6 +1,6 @@
 import std/[os, strutils, sequtils, strformat, pegs, tables]
 
-import shell
+import shell, c2nim
 
 proc remove(content: var string; ranges: varargs[HSlice[string, string]]) =
   for range in ranges:
@@ -14,16 +14,12 @@ proc remove(content: var string; ranges: varargs[HSlice[string, string]]) =
       else:
         break
 
-proc preprocess(infile: string): #[outfile:]# string =
-  result = "tmp"/infile
-  createDir result.parentDir
-  var content = readFile(infile)
-  content.remove("#if ".."#endif\n", "/*".."*/\n")
-  content = content.replace("const ", "")
-  content = content.replace("void (**implementation)(void)", "void *implementation")
-  content = content.replace("void (**)(void)", "void *")
-
-  writeFile(result, content)
+proc preprocess(contents: string): string =
+  result = contents
+  result.remove("#if ".."#endif\n", "/*".."*/\n")
+  result = result.replace("const ", "")
+  result = result.replace("void (**implementation)(void)", "void *implementation")
+  result = result.replace("void (**)(void)", "void *")
 
 proc margeBlock(content: var seq[string]; header: Peg) =
   var i: int
@@ -67,23 +63,34 @@ proc removeBlock(contents: var seq[string]; header: Peg) =
       dec i
     inc i
 
-proc postprocess(contents: seq[string]): seq[string] =
-  result = contents
-  for line in result.mitems:
+proc postprocess(contents: string): string =
+  var lines = contents.splitLines
+  for line in lines.mitems:
     line = line.parallelReplace(
       (peg"cdecl", "nimcall"),
       (peg"ptr\ ptr\ {\ident}", "ptr UncheckedArray[ptr $1]"),
     )
-  result.margeBlock(peg"type")
-  result.margeBlock(peg"const")
+  lines.margeBlock(peg"type")
+  lines.margeBlock(peg"const")
 
-proc postprocess_server(contents: seq[string]): seq[string] =
-  result = postprocess contents
+  result = lines.join("\n")
 
-  result.removeBlock(peg"proc\ init\*\(signal.*")
-  result.removeBlock(peg"proc\ add\*\(signal.*")
-  result.removeBlock(peg"proc\ get\*\(signal.*")
-  result.removeBlock(peg"proc\ emit\*\(signal.*")
+proc postprocess_server(contents: string): string =
+  var lines = contents.splitLines
+  for line in lines.mitems:
+    line = line.parallelReplace(
+      (peg"cdecl", "nimcall"),
+      (peg"ptr\ ptr\ {\ident}", "ptr UncheckedArray[ptr $1]"),
+    )
+  lines.margeBlock(peg"type")
+  lines.margeBlock(peg"const")
+
+  lines.removeBlock(peg"proc\ init\*\(signal.*")
+  lines.removeBlock(peg"proc\ add\*\(signal.*")
+  lines.removeBlock(peg"proc\ get\*\(signal.*")
+  lines.removeBlock(peg"proc\ emit\*\(signal.*")
+
+  result = lines.join("\n")
 
 const
   defs = "generator/defs.c2nim"
@@ -93,139 +100,89 @@ const
   `outDir/gen` = outDir & "/gen"
   `outDir/gen/includes` = `outDir/gen` & "/includes"
 
-type C2NimArgs = object
-  `in`: seq[string]
-  `out`: string
-  dynlib: string
+let mangle = @{
+  "^va_list$": "varargs[pointer]",
+  "wl_event_loop_create$": "create_event_loop",
+  "wl_event_loop_": "",
+  "wl_event_source_": "",
+  "wl_display_create$": "create_display",
+  "wl_display_connect{.*}": "connect_display$1",
+  "wl_display_": "",
+  "wl_global_create$": "create_global",
+  "wl_global_": "",
+  "wl_client_create$": "create_client",
+  "wl_client_from_link$": "client_from_link",
+  "wl_client_": "",
+  "wl_signal_": "",
+  "wl_resource_create$": "create_resource",
+  "wl_resource_from_link$": "resource_from_link",
+  "wl_resource_": "",
+  "wl_shm_buffer_get$": "get_shm_buffer",
+  "wl_shm_buffer_create$": "create_shm_buffer",
+  "wl_shm_buffer_": "",
+  "wl_shm_pool_": "",
+  "wl_protocol_logger_!(type)!(message)": "",
+  "wl_log_!(func_t)": "",
+  "wl_event_queue_": "",
+  "wl_proxy_!(create_wrapper)!(wrapper_destroy)": "",
+  "wl_cursor_theme_load": "load_cursor_theme",
+  "wl_cursor_theme_": "",
+  "wl_cursor_image_": "",
+  "wl_cursor_!(theme)!(image)": "",
+  "wl_egl_window_create": "create_egl_window",
+  "wl_egl_window_": "",
 
-var
-  clientSourceDir = exec("pkg-config", ["--variable=includedir", "wayland-client"]).out.splitLines[0]
-  serverSourceDir = exec("pkg-config", ["--variable=includedir", "wayland-server"]).out.splitLines[0]
-  cursorSourceDir = exec("pkg-config", ["--variable=includedir", "wayland-cursor"]).out.splitLines[0]
-  eglSourceDir = exec("pkg-config", ["--variable=includedir", "wayland-egl"]).out.splitLines[0]
-  versionSourceDir = clientSourceDir
+  "wl_buffer$": "Buffer",
+  "wl_callback$": "Callback",
+  "wl_client$": "Client",
+  "wl_compositor$": "Compositor",
+  "wl_connection$": "Connection",
+  "wl_data_device$": "DataDevice",
+  "wl_data_device_manager$": "DataDeviceManager",
+  "wl_data_offer$": "DataOffer",
+  "wl_data_source$": "DataSource",
+  "wl_display$": "Display",
+  "wl_event_loop$": "EventLoop",
+  "wl_event_queue$": "EventQueue",
+  "wl_event_source$": "EventSource",
+  "wl_fixes$": "Fixes",
+  "wl_global$": "Global",
+  "wl_keyboard$": "Keyboard",
+  "wl_output$": "Output",
+  "wl_pointer$": "Pointer",
+  "wl_protocol_logger$": "ProtocolLogger",
+  "wl_proxy$": "Proxy",
+  "wl_region$": "Region",
+  "wl_registry$": "Registry",
+  "wl_seat$": "Seat",
+  "wl_shell$": "Shell",
+  "wl_shell_surface$": "ShellSurface",
+  "wl_shm$": "Shm",
+  "wl_shm_buffer$": "ShmBuffer",
+  "wl_shm_pool$": "ShmPool",
+  "wl_subcompositor$": "Subcompositor",
+  "wl_subsourface$": "Subsurface",
+  "wl_surface$": "Surface",
+  "wl_touch$": "Touch",
 
-  client_core = C2NimArgs(
-    `in`: @[defs, deps_client, clientSourceDir/"wayland-client-core.h"],
-    `out`: `outDir/gen/includes`/"client_core.nim",
-    dynlib: "libwayland-client.so",
-  )
-  server_core = C2NimArgs(
-    `in`: @[defs, deps_server, serverSourceDir/"wayland-server-core.h"],
-    `out`: `outDir/gen/includes`/"server_core.nim",
-    dynlib: "libwayland-server.so",
-  )
-  version = C2NimArgs(
-    `in`: @[defs, versionSourceDir/"wayland-version.h"],
-    `out`: `outDir/gen`/"version.nim",
-    )
-  cursor = C2NimArgs(
-    `in`: @[defs, cursorSourceDir/"wayland-cursor.h"],
-    `out`: `outDir/gen/includes`/"cursor.nim",
-    dynlib: "libwayland-cursor.so",
-  )
-  egl = C2NimArgs(
-    `in`: @[defs, eglSourceDir/"wayland-egl-core.h"],
-    `out`: `outDir/gen/includes`/"egl.nim",
-    dynlib: "libwayland-egl.so",
-  )
+  "wl_message$": "Message",
+  "wl_interface$": "Interface",
+  "wl_list$": "List",
+  "wl_array$": "Array",
+  "wl_fixed_t$": "Fixed",
+  "wl_argument$": "Argument",
+  "wl_object$": "Object",
+  "wl_resource$": "Resource",
+  "wl_signal$": "Signal",
+  "wl_listener$": "Listener",
+  "wl_protocol_logger_type$": "ProtocolLoggerType",
+  "wl_protocol_logger_message$": "ProtocolLoggerMessage",
 
-proc c2nim(shell: ShellEnv; args: C2NimArgs; postprocess: proc(contents: seq[string]): seq[string] = postprocess): ShellEnv =
-  var a = args.in.map(preprocess)
-  createDir args.out.parentDir
-  a.add "--out:" & args.out
-  if args.dynlib.len != 0:
-    a.add &"--dynlib:\"{args.dynlib}\""
-  a.add [
-    "--concat", "--skipcomments", "--skipinclude", "--stdints", "--importc", "--cdecl",
-    r"--mangle:'^va_list$=varargs[pointer]'",
-    r"--mangle:'wayland\-client=client_core'",
-    r"--mangle:'wayland\-server=server_core'",
-    r"--mangle:wayland\-util=util",
-    r"--mangle:wayland\-version=version",
-    r"--mangle:wl_event_loop_create$=create_event_loop",
-    r"--mangle:wl_event_loop_=",
-    r"--mangle:wl_event_source_=",
-    r"--mangle:wl_display_create$=create_display",
-    r"--mangle:wl_display_connect{.*}=connect_display$1",
-    r"--mangle:wl_display_=",
-    r"--mangle:wl_global_create$=create_global",
-    r"--mangle:wl_global_=",
-    r"--mangle:wl_client_create$=create_client",
-    r"--mangle:wl_client_from_link$=client_from_link",
-    r"--mangle:wl_client_=",
-    r"--mangle:wl_signal_=",
-    r"--mangle:wl_resource_create$=create_resource",
-    r"--mangle:wl_resource_from_link$=resource_from_link",
-    r"--mangle:wl_resource_=",
-    r"--mangle:wl_shm_buffer_get$=get_shm_buffer",
-    r"--mangle:wl_shm_buffer_create$=create_shm_buffer",
-    r"--mangle:wl_shm_buffer_=",
-    r"--mangle:wl_shm_pool_=",
-    r"--mangle:wl_protocol_logger_!(type)!(message)=",
-    r"--mangle:wl_log_!(func_t)=",
-    r"--mangle:wl_event_queue_=",
-    r"--mangle:wl_proxy_!(create_wrapper)!(wrapper_destroy)=",
-    r"--mangle:wl_cursor_theme_load=load_cursor_theme",
-    r"--mangle:wl_cursor_theme_=",
-    r"--mangle:wl_cursor_image_=",
-    r"--mangle:wl_cursor_!(theme)!(image)=",
-    r"--mangle:wl_egl_window_create=create_egl_window",
-    r"--mangle:wl_egl_window_=",
-
-    r"--mangle:wl_buffer$=Buffer",
-    r"--mangle:wl_callback$=Callback",
-    r"--mangle:wl_client$=Client",
-    r"--mangle:wl_compositor$=Compositor",
-    r"--mangle:wl_connection$=Connection",
-    r"--mangle:wl_data_device$=DataDevice",
-    r"--mangle:wl_data_device_manager$=DataDeviceManager",
-    r"--mangle:wl_data_offer$=DataOffer",
-    r"--mangle:wl_data_source$=DataSource",
-    r"--mangle:wl_display$=Display",
-    r"--mangle:wl_event_loop$=EventLoop",
-    r"--mangle:wl_event_queue$=EventQueue",
-    r"--mangle:wl_event_source$=EventSource",
-    r"--mangle:wl_fixes$=Fixes",
-    r"--mangle:wl_global$=Global",
-    r"--mangle:wl_keyboard$=Keyboard",
-    r"--mangle:wl_output$=Output",
-    r"--mangle:wl_pointer$=Pointer",
-    r"--mangle:wl_protocol_logger$=ProtocolLogger",
-    r"--mangle:wl_proxy$=Proxy",
-    r"--mangle:wl_region$=Region",
-    r"--mangle:wl_registry$=Registry",
-    r"--mangle:wl_seat$=Seat",
-    r"--mangle:wl_shell$=Shell",
-    r"--mangle:wl_shell_surface$=ShellSurface",
-    r"--mangle:wl_shm$=Shm",
-    r"--mangle:wl_shm_buffer$=ShmBuffer",
-    r"--mangle:wl_shm_pool$=ShmPool",
-    r"--mangle:wl_subcompositor$=Subcompositor",
-    r"--mangle:wl_subsourface$=Subsurface",
-    r"--mangle:wl_surface$=Surface",
-    r"--mangle:wl_touch$=Touch",
-
-    r"--mangle:wl_message$=Message",
-    r"--mangle:wl_interface$=Interface",
-    r"--mangle:wl_list$=List",
-    r"--mangle:wl_array$=Array",
-    r"--mangle:wl_fixed_t$=Fixed",
-    r"--mangle:wl_argument$=Argument",
-    r"--mangle:wl_object$=Object",
-    r"--mangle:wl_resource$=Resource",
-    r"--mangle:wl_signal$=Signal",
-    r"--mangle:wl_listener$=Listener",
-    r"--mangle:wl_protocol_logger_type$=ProtocolLoggerType",
-    r"--mangle:wl_protocol_logger_message$=ProtocolLoggerMessage",
-
-    r"--mangle:wl_egl_window$=EglWindow",
-    r"--mangle:wl_cursor_theme$=CursorTheme",
-    r"--mangle:wl_cursor_image$=CursorImage",
-    r"--mangle:wl_cursor$=Cursor",
-  ]
-  result = shell.exec("c2nim", a)
-  args.out.writeFile postprocess(args.out.readFile.splitLines).join("\n")
+  "wl_egl_window$": "EglWindow",
+  "wl_cursor_theme$": "CursorTheme",
+  "wl_cursor_image$": "CursorImage",
+  "wl_cursor$": "Cursor",
+}
 
 type
   ScannerFlag = enum
@@ -263,6 +220,53 @@ const
     "xdg-decoration-unstable": @[
       "wayland/protocols/stable/xdgShell"],
   }
+
+var
+  clientSourceDir = exec("pkg-config", ["--variable=includedir", "wayland-client"]).out.splitLines[0]
+  serverSourceDir = exec("pkg-config", ["--variable=includedir", "wayland-server"]).out.splitLines[0]
+  cursorSourceDir = exec("pkg-config", ["--variable=includedir", "wayland-cursor"]).out.splitLines[0]
+  eglSourceDir = exec("pkg-config", ["--variable=includedir", "wayland-egl"]).out.splitLines[0]
+  versionSourceDir = clientSourceDir
+
+  client_core = C2NimArgs(
+    `in`: @[defs, deps_client, clientSourceDir/"wayland-client-core.h"],
+    `out`: `outDir/gen/includes`/"client_core.nim",
+    dynlib: "libwayland-client.so",
+    mangle: mangle,
+    preprocess: preprocess, postprocess: postprocess,
+    skipcomments: true, skipinclude: true, stdints: true, importc: true, cdecl: true,
+  )
+  server_core = C2NimArgs(
+    `in`: @[defs, deps_server, serverSourceDir/"wayland-server-core.h"],
+    `out`: `outDir/gen/includes`/"server_core.nim",
+    dynlib: "libwayland-server.so",
+    mangle: mangle,
+    preprocess: preprocess, postprocess: postprocess_server,
+    skipcomments: true, skipinclude: true, stdints: true, importc: true, cdecl: true,
+  )
+  version = C2NimArgs(
+    `in`: @[defs, versionSourceDir/"wayland-version.h"],
+    `out`: `outDir/gen`/"version.nim",
+    mangle: mangle,
+    preprocess: preprocess, postprocess: postprocess,
+    skipcomments: true, skipinclude: true, stdints: true, importc: true, cdecl: true,
+    )
+  cursor = C2NimArgs(
+    `in`: @[defs, cursorSourceDir/"wayland-cursor.h"],
+    `out`: `outDir/gen/includes`/"cursor.nim",
+    dynlib: "libwayland-cursor.so",
+    mangle: mangle,
+    preprocess: preprocess, postprocess: postprocess,
+    skipcomments: true, skipinclude: true, stdints: true, importc: true, cdecl: true,
+  )
+  egl = C2NimArgs(
+    `in`: @[defs, eglSourceDir/"wayland-egl-core.h"],
+    `out`: `outDir/gen/includes`/"egl.nim",
+    dynlib: "libwayland-egl.so",
+    mangle: mangle,
+    preprocess: preprocess, postprocess: postprocess,
+    skipcomments: true, skipinclude: true, stdints: true, importc: true, cdecl: true,
+  )
 
 iterator collectProtocols(root: string): ProtocolInfo =
   for path in root.walkDirRec():
@@ -310,7 +314,7 @@ removeDir "src/wayland/protocols"
 discard cd"."
   .c2nim(version)
   .c2nim(client_core)
-  .c2nim(server_core, postprocess_server)
+  .c2nim(server_core)
   .c2nim(cursor)
   .c2nim(egl)
 
