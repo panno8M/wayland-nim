@@ -1,0 +1,26 @@
+{
+  "version": 2,
+  "packages": {
+    "nim": {
+      "version": "2.0.8",
+      "vcsRevision": "5935c3bfa9fec6505394867b23510eb5cbab3dbf",
+      "url": "https://github.com/nim-lang/Nim.git",
+      "downloadMethod": "git",
+      "dependencies": [],
+      "checksums": {
+        "sha1": "46333e8f4bda41dd6d3852a3f5fa4975b96b66a2"
+      }
+    },
+    "shellsophia": {
+      "version": "0.1.0",
+      "vcsRevision": "e38c289ac60bc5e92c6475a73e419e58f7024f8c",
+      "url": "https://github.com/panno8M/shellsophia",
+      "downloadMethod": "git",
+      "dependencies": [],
+      "checksums": {
+        "sha1": "a9673e4dacd1cf6ec1fa475473fa0041dd375811"
+      }
+    }
+  },
+  "tasks": {}
+}
